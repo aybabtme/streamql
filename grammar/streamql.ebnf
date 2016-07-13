@@ -1,0 +1,37 @@
+# validate it's LL(1) with http://smlweb.cpsc.ucalgary.ca/start.html
+
+# CFG (more readable)
+
+Start -> Filters.
+Filters -> Filter
+         | Filter filter_sep Filters.
+
+Filter -> Selector
+         | Selector pipe_sep Filter.
+Selector -> this_symbol
+          | this_symbol Member
+          | Selector open_array close_array
+          | Selector open_array Range close_array
+          | Selector open_array Index close_array.
+Member -> member_string.
+Range -> integer range_sep integer.
+Index -> integer.
+
+# LL(1) (better implementable)
+
+Start -> Filters.
+Filters -> Filter FilterChain.
+FilterChain -> filter_sep Filters
+             | epsilon.
+
+Filter -> Selector SelectorChain.
+SelectorChain -> pipe_sep Filter
+               | epsilon.
+Selector -> this_symbol TypedSelector.
+TypedSelector -> member_string
+               | open_array ArraySelector
+               | epsilon.
+ArraySelector -> close_array
+               | integer TypedArraySelector.
+TypedArraySelector -> range_sep integer close_array
+                    | close_array.
