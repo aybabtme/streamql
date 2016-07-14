@@ -1,37 +1,94 @@
-# validate it's LL(1) with http://smlweb.cpsc.ucalgary.ca/start.html
+/* validate it's LL(1) with http://smlweb.cpsc.ucalgary.ca/start.html */
 
-# CFG (more readable)
+/* Semantic */
 
-Start -> Filters.
+/* CFG (more readable) */
+
+Start -> Filters .
 Filters -> Filter
-         | Filter filter_sep Filters.
+         | Filter PipeSeparatorKeyword Filters .
 
 Filter -> Selector
-         | Selector pipe_sep Filter.
-Selector -> this_symbol
-          | this_symbol Member
-          | Selector open_array close_array
-          | Selector open_array Range close_array
-          | Selector open_array Index close_array.
-Member -> member_string.
-Range -> integer range_sep integer.
-Index -> integer.
+         | Selector PipeSeparatorKeyword Filter .
+Selector -> ThisKeyword
+          | ThisKeyword Member
+          | Selector OpenArrayKeyword CloseArrayKeyword
+          | Selector OpenArrayKeyword Range CloseArrayKeyword
+          | Selector OpenArrayKeyword Index CloseArrayKeyword .
+Member -> FieldIdentifier .
+Range -> Integer RangeSeparatorKeyword Integer .
+Index -> Integer .
 
-# LL(1) (better implementable)
+/* LL(1) (better implementable) */
 
-Start -> Filters.
-Filters -> Filter FilterChain.
-FilterChain -> filter_sep Filters
-             | epsilon.
+Start -> Filters .
+Filters -> Filter FilterChain .
+FilterChain -> FilterSeparatorKeyword Filters
+             | Epsilon .
 
-Filter -> Selector SelectorChain.
-SelectorChain -> pipe_sep Filter
-               | epsilon.
-Selector -> this_symbol TypedSelector.
-TypedSelector -> member_string
-               | open_array ArraySelector
-               | epsilon.
-ArraySelector -> close_array
-               | integer TypedArraySelector.
-TypedArraySelector -> range_sep integer close_array
-                    | close_array.
+Filter -> Selector SelectorChain .
+SelectorChain -> PipeSeparatorKeyword Filter
+               | Epsilon .
+Selector -> ThisKeyword TypedSelector .
+TypedSelector -> FieldIdentifier
+               | OpenArrayKeyword ArraySelector .
+ArraySelector -> CloseArrayKeyword
+               | Integer TypedArraySelector .
+TypedArraySelector -> RangeSeparatorKeyword Integer CloseArrayKeyword
+                    | CloseArrayKeyword .
+
+/* Lexical */
+
+/* special */
+
+Whitespace -> whitespace Whitespace
+            | Epsilon .
+Epsilon -> epsilon .
+
+/* literals */
+
+FieldIdentifier -> InlineString .
+
+/* keywords */
+
+FilterSeparatorKeyword -> comma_class .
+PipeSeparatorKeyword -> pipe_class .
+ThisKeyword -> dot_class .
+OpenArrayKeyword -> left_bracket_class .
+CloseArrayKeyword -> right_bracket_class .
+RangeSeparatorKeyword -> colon_class .
+
+Keywords -> FilterSeparatorKeyword
+          | PipeSeparatorKeyword
+          | ThisKeyword
+          | OpenArrayKeyword
+          | CloseArrayKeyword
+          | RangeSeparatorKeyword .
+
+InlineString -> InlineLetter InlineString
+              | Epsilon .
+InlineLetter -> Letter
+              | escape_letter_class EscapedKeyword .
+EscapedKeyword -> Keywords
+                | Whitespace .
+Letter -> letter_class
+        | numeral_class .
+Integer -> zero_numeral_class
+         | non_zero_numeral_class Integer .
+
+/* terminals -> regexp */
+
+epsilon -> "" .
+whitespace_class -> " " .
+pipe_class -> "|" .
+comma_class -> "," .
+dot_class -> "." .
+left_bracket_class -> "[" .
+right_bracket_class -> "]" .
+colon_class -> ":" .
+
+escape_letter_class -> "\" .
+letter_class -> [a-Z].
+numeral_class -> zero_numeral_class | non_zero_numeral_class.
+zero_numeral_class -> "0".
+non_zero_numeral_class -> [1-9].
