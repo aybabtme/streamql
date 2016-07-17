@@ -6,7 +6,7 @@
 
 Start -> Filters .
 Filters -> Filter
-         | Filter PipeSeparatorKeyword Filters .
+         | Filter FilterSeparatorKeyword Filters .
 
 Filter -> Selector
          | Selector PipeSeparatorKeyword Filter .
@@ -24,11 +24,11 @@ Index -> Integer .
 Start -> Filters .
 Filters -> Filter FilterChain .
 FilterChain -> FilterSeparatorKeyword Filters
-             | Epsilon .
+             | epsilon .
 
 Filter -> Selector SelectorChain .
 SelectorChain -> PipeSeparatorKeyword Filter
-               | Epsilon .
+               | epsilon .
 Selector -> ThisKeyword TypedSelector .
 TypedSelector -> FieldIdentifier
                | OpenArrayKeyword ArraySelector .
@@ -39,24 +39,21 @@ TypedArraySelector -> RangeSeparatorKeyword Integer CloseArrayKeyword
 
 /* Lexical */
 
+Lexicon -> Whitespace
+         | FieldIdentifier
+         | Keywords
+         | Integer.
+
 /* special */
 
-Whitespace -> whitespace Whitespace
-            | Epsilon .
-Epsilon -> epsilon .
+Whitespace -> whitespace_class Whitespace
+            | epsilon .
 
 /* literals */
 
 FieldIdentifier -> InlineString .
 
 /* keywords */
-
-FilterSeparatorKeyword -> comma_class .
-PipeSeparatorKeyword -> pipe_class .
-ThisKeyword -> dot_class .
-OpenArrayKeyword -> left_bracket_class .
-CloseArrayKeyword -> right_bracket_class .
-RangeSeparatorKeyword -> colon_class .
 
 Keywords -> FilterSeparatorKeyword
           | PipeSeparatorKeyword
@@ -65,16 +62,25 @@ Keywords -> FilterSeparatorKeyword
           | CloseArrayKeyword
           | RangeSeparatorKeyword .
 
-InlineString -> InlineLetter InlineString
-              | Epsilon .
+FilterSeparatorKeyword -> comma_class .
+PipeSeparatorKeyword -> pipe_class .
+ThisKeyword -> dot_class .
+OpenArrayKeyword -> left_bracket_class .
+CloseArrayKeyword -> right_bracket_class .
+RangeSeparatorKeyword -> colon_class .
+
+InlineString -> InlineLetter SubInlineString .
+SubInlineString -> InlineLetter SubInlineString
+                 | Digit SubInlineString
+                 | epsilon .
 InlineLetter -> Letter
               | escape_letter_class EscapedKeyword .
 EscapedKeyword -> Keywords
                 | Whitespace .
-Letter -> letter_class
-        | numeral_class .
-Integer -> zero_numeral_class
-         | non_zero_numeral_class Integer .
+Letter -> letter_class .
+Digit -> digit_class .
+Integer -> zero_digit_class
+         | non_zero_digit_class Integer .
 
 /* terminals -> regexp */
 
@@ -89,6 +95,6 @@ colon_class -> ":" .
 
 escape_letter_class -> "\" .
 letter_class -> [a-Z].
-numeral_class -> zero_numeral_class | non_zero_numeral_class.
-zero_numeral_class -> "0".
-non_zero_numeral_class -> [1-9].
+digit_class -> zero_digit_class | non_zero_digit_class.
+zero_digit_class -> "0".
+non_zero_digit_class -> [1-9].
