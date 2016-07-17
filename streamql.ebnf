@@ -9,33 +9,46 @@ Filters -> Filter
          | Filter FilterSeparatorKeyword Filters .
 
 Filter -> Selector
-         | Selector PipeSeparatorKeyword Filter .
-Selector -> ThisKeyword
-          | ThisKeyword Member
-          | Selector OpenArrayKeyword CloseArrayKeyword
-          | Selector OpenArrayKeyword Range CloseArrayKeyword
-          | Selector OpenArrayKeyword Index CloseArrayKeyword .
+        | Selector PipeSeparatorKeyword Filter .
+InitialSelector -> ObjectSelector Selector .
+Selector -> ObjectSelector Selector
+          | ArraySelector Selector
+          | epsilon.
+ObjectSelector -> ThisKeyword
+                | ThisKeyword Member .
+ArraySelector -> EachKeyword
+               | RangeEachKeyword
+               | IndexKeyword .
+
 Member -> FieldIdentifier .
+EachKeyword -> OpenArrayKeyword CloseArrayKeyword .
+RangeEachKeyword -> OpenArrayKeyword Range CloseArrayKeyword .
+IndexKeyword -> OpenArrayKeyword Index CloseArrayKeyword .
 Range -> Integer RangeSeparatorKeyword Integer .
 Index -> Integer .
 
 /* LL(1) (better implementable) */
 
-Start -> Filters .
-Filters -> Filter FilterChain .
-FilterChain -> FilterSeparatorKeyword Filters
-             | epsilon .
-
-Filter -> Selector SelectorChain .
-SelectorChain -> PipeSeparatorKeyword Filter
-               | epsilon .
-Selector -> ThisKeyword TypedSelector .
-TypedSelector -> FieldIdentifier
-               | OpenArrayKeyword ArraySelector .
-ArraySelector -> CloseArrayKeyword
-               | Integer TypedArraySelector .
-TypedArraySelector -> RangeSeparatorKeyword Integer CloseArrayKeyword
-                    | CloseArrayKeyword .
+Start                 -> Filters .
+Filters               -> Filter FilterChain .
+FilterChain           -> comma Filters
+                       | epsilon .
+Filter                -> InitialSelector SelectorChain .
+SelectorChain         -> pipe Filter
+                       | epsilon .
+InitialSelector       -> dot InitialObjectSelector .
+InitialObjectSelector -> MemberSelector Selector
+                       | ArraySelector Selector .
+Selector              -> ObjectSelector Selector
+                       | ArraySelector Selector
+                       | epsilon .
+ObjectSelector        -> dot MemberSelector .
+MemberSelector        -> string .
+ArraySelector         -> leftBracket ArrayOpSelector .
+ArrayOpSelector       -> rightBracket
+                       | integer ArrayOpIndexor .
+ArrayOpIndexor        -> colon integer rightBracket
+                       | rightBracket .
 
 /* Lexical */
 
