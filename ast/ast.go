@@ -9,26 +9,30 @@ type FilterStmt struct {
 }
 
 type SelectorStmt struct {
-	// optional
-	Member *MemberStmt
-
 	// oneof
-	Each      *EachStmt
-	RangeEach *RangeEachStmt
-	Index     *IndexStmt
+	Object *ObjectSelectorStmt
+	Array  *ArraySelectorStmt
 }
 
-type MemberStmt struct {
-	FieldName string
+type ObjectSelectorStmt struct {
+	// Member on which the Child will be applied.
+	Member string
+
+	Child *SelectorStmt
 }
 
-type EachStmt struct{}
+type ArraySelectorStmt struct {
+	// oneof
+	Each      *EachSelectorStmt
+	RangeEach *RangeEachSelectorStmt
+	Index     *IndexSelectorStmt
 
-type RangeEachStmt struct {
-	From int
-	To   int
+	// Member on which the Child will be applied.
+	Child *SelectorStmt
 }
 
-type IndexStmt struct {
-	Index int
-}
+type (
+	EachSelectorStmt      struct{}
+	RangeEachSelectorStmt struct{ From, To int }
+	IndexSelectorStmt     struct{ Index int }
+)
