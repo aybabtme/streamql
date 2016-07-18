@@ -30,11 +30,11 @@ Index -> Integer .
 /* LL(1) (better implementable) */
 
 Start                 -> Filters .
-Filters               -> Filter FilterChain .
-FilterChain           -> comma Filters
+Filters               -> Filter Whitespace FilterChain .
+FilterChain           -> comma Whitespace Filters
                        | epsilon .
-Filter                -> InitialSelector SelectorChain .
-SelectorChain         -> pipe Filter
+Filter                -> InitialSelector Whitespace SelectorChain .
+SelectorChain         -> pipe Whitespace Filter
                        | epsilon .
 InitialSelector       -> dot InitialObjectSelector .
 InitialObjectSelector -> MemberSelector Selector
@@ -46,9 +46,12 @@ ObjectSelector        -> dot MemberSelector .
 MemberSelector        -> string .
 ArraySelector         -> leftBracket ArrayOpSelector .
 ArrayOpSelector       -> rightBracket
-                       | integer ArrayOpIndexor .
-ArrayOpIndexor        -> colon integer rightBracket
+                       | Whitespace integer Whitespace ArrayOpIndexor .
+ArrayOpIndexor        -> colon Whitespace integer Whitespace rightBracket
                        | rightBracket .
+
+Whitespace -> whitespace Whitespace
+            | epsilon .
 
 /* Lexical */
 

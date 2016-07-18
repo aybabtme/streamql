@@ -3,6 +3,7 @@ package parser
 import (
 	"io"
 
+	"github.com/aybabtme/streamql/ast"
 	"github.com/aybabtme/streamql/scanner"
 	"github.com/aybabtme/streamql/token"
 )
@@ -24,6 +25,7 @@ func NewParser(r io.Reader) *Parser {
 
 func (p *Parser) Parse() (*ast.FiltersStmt, error) {
 	stmt := &ast.FiltersStmt{}
+	tok, lit, err := p.scan()
 }
 
 // helpers
