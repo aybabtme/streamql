@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"encoding/json"
 	"reflect"
 	"strings"
 	"testing"
@@ -18,7 +19,33 @@ func TestParse(t *testing.T) {
 			input: ".",
 			want: &ast.FiltersStmt{
 				Filters: []*ast.FilterStmt{
-					{Selectors: []*ast.SelectorStmt{}},
+					{Selectors: []*ast.SelectorStmt{
+						{},
+					}},
+				},
+			},
+		},
+		{
+			input: ".,.",
+			want: &ast.FiltersStmt{
+				Filters: []*ast.FilterStmt{
+					{Selectors: []*ast.SelectorStmt{
+						{},
+					}},
+					{Selectors: []*ast.SelectorStmt{
+						{},
+					}},
+				},
+			},
+		},
+		{
+			input: ".|.",
+			want: &ast.FiltersStmt{
+				Filters: []*ast.FilterStmt{
+					{Selectors: []*ast.SelectorStmt{
+						{},
+						{},
+					}},
 				},
 			},
 		},
@@ -52,38 +79,32 @@ func TestParse(t *testing.T) {
 			},
 		},
 		{
-			input: `.[].id | .[].id, .[].id`,
+			input: ".hello | .bye",
 			want: &ast.FiltersStmt{
 				Filters: []*ast.FilterStmt{
 					{Selectors: []*ast.SelectorStmt{
-						// first
-						{Array: &ast.ArraySelectorStmt{
-							Each: &ast.EachSelectorStmt{},
-							Child: &ast.SelectorStmt{
-								Object: &ast.ObjectSelectorStmt{
-									Member: "id",
-								},
-							},
+						{Object: &ast.ObjectSelectorStmt{
+							Member: "hello",
 						}},
-						// | second
-						{Array: &ast.ArraySelectorStmt{
-							Each: &ast.EachSelectorStmt{},
-							Child: &ast.SelectorStmt{
-								Object: &ast.ObjectSelectorStmt{
-									Member: "id",
-								},
-							},
+						{Object: &ast.ObjectSelectorStmt{
+							Member: "bye",
 						}},
 					}},
-					// , other filter
+				},
+			},
+		},
+		{
+			input: ".hello , .bye",
+			want: &ast.FiltersStmt{
+				Filters: []*ast.FilterStmt{
 					{Selectors: []*ast.SelectorStmt{
-						{Array: &ast.ArraySelectorStmt{
-							Each: &ast.EachSelectorStmt{},
-							Child: &ast.SelectorStmt{
-								Object: &ast.ObjectSelectorStmt{
-									Member: "id",
-								},
-							},
+						{Object: &ast.ObjectSelectorStmt{
+							Member: "hello",
+						}},
+					}},
+					{Selectors: []*ast.SelectorStmt{
+						{Object: &ast.ObjectSelectorStmt{
+							Member: "bye",
 						}},
 					}},
 				},
@@ -120,6 +141,42 @@ func TestParse(t *testing.T) {
 					{Selectors: []*ast.SelectorStmt{
 						{Array: &ast.ArraySelectorStmt{
 							Each: &ast.EachSelectorStmt{},
+						}},
+					}},
+				},
+			},
+		},
+		{
+			input: ".hello[]",
+			want: &ast.FiltersStmt{
+				Filters: []*ast.FilterStmt{
+					{Selectors: []*ast.SelectorStmt{
+						{Object: &ast.ObjectSelectorStmt{
+							Member: "hello",
+							Child: &ast.SelectorStmt{
+								Array: &ast.ArraySelectorStmt{
+									Each: &ast.EachSelectorStmt{},
+								},
+							},
+						}},
+					}},
+				},
+			},
+		},
+		{
+			input: ".hello[1]",
+			want: &ast.FiltersStmt{
+				Filters: []*ast.FilterStmt{
+					{Selectors: []*ast.SelectorStmt{
+						{Object: &ast.ObjectSelectorStmt{
+							Member: "hello",
+							Child: &ast.SelectorStmt{
+								Array: &ast.ArraySelectorStmt{
+									Index: &ast.IndexSelectorStmt{
+										Index: 1,
+									},
+								},
+							},
 						}},
 					}},
 				},
@@ -180,16 +237,68 @@ func TestParse(t *testing.T) {
 				},
 			},
 		},
+
+		{
+			input: `.[].id1 | .[].id2, .[].id3`,
+			want: &ast.FiltersStmt{
+				Filters: []*ast.FilterStmt{
+					{Selectors: []*ast.SelectorStmt{
+						// first
+						{Array: &ast.ArraySelectorStmt{
+							Each: &ast.EachSelectorStmt{},
+							Child: &ast.SelectorStmt{
+								Object: &ast.ObjectSelectorStmt{
+									Member: "id1",
+								},
+							},
+						}},
+						// | second
+						{Array: &ast.ArraySelectorStmt{
+							Each: &ast.EachSelectorStmt{},
+							Child: &ast.SelectorStmt{
+								Object: &ast.ObjectSelectorStmt{
+									Member: "id2",
+								},
+							},
+						}},
+					}},
+					// , other filter
+					{Selectors: []*ast.SelectorStmt{
+						{Array: &ast.ArraySelectorStmt{
+							Each: &ast.EachSelectorStmt{},
+							Child: &ast.SelectorStmt{
+								Object: &ast.ObjectSelectorStmt{
+									Member: "id3",
+								},
+							},
+						}},
+					}},
+				},
+			},
+		},
 	}
 
 	for n, tt := range tests {
 		t.Logf("test #%d, input %q", n, tt.input)
 
 		got, err := NewParser(strings.NewReader(tt.input)).Parse()
-
+		if err != nil {
+			t.Fatalf("%+v", err)
+		}
 		if !reflect.DeepEqual(tt.want, got) {
+
 			t.Errorf("want=%#v", tt.want)
 			t.Errorf(" got=%#v", got)
+
+			wantData, _ := json.MarshalIndent(tt.want, "", "  ")
+			gotData, _ := json.MarshalIndent(got, "", "  ")
+
+			t.Errorf("want=%#v", tt.want)
+			t.Errorf(" got=%#v", got)
+
+			t.Errorf("want=%s", string(wantData))
+			t.Errorf(" got=%s", string(gotData))
+
 		}
 	}
 }

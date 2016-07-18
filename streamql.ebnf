@@ -10,7 +10,7 @@ Filters -> Filter
 
 Filter -> Selector
         | Selector PipeSeparatorKeyword Filter .
-InitialSelector -> ObjectSelector Selector .
+RootSelector -> ObjectSelector Selector .
 Selector -> ObjectSelector Selector
           | ArraySelector Selector
           | epsilon.
@@ -33,15 +33,17 @@ Start                 -> Filters .
 Filters               -> Filter Whitespace FilterChain .
 FilterChain           -> comma Whitespace Filters
                        | epsilon .
-Filter                -> InitialSelector Whitespace SelectorChain .
-SelectorChain         -> pipe Whitespace Filter
+Filter                -> Selectors .
+Selectors             -> RootSelector Whitespace SelectorChain .
+SelectorChain         -> pipe Whitespace Selectors
                        | epsilon .
-InitialSelector       -> dot InitialObjectSelector .
-InitialObjectSelector -> MemberSelector Selector
-                       | ArraySelector Selector .
+RootSelector          -> dot RootObjectSelector .
+RootObjectSelector    -> MemberSelector Selector
+                       | ArraySelector Selector
+                       | Whitespace epsilon .
 Selector              -> ObjectSelector Selector
                        | ArraySelector Selector
-                       | epsilon .
+                       | Whitespace epsilon .
 ObjectSelector        -> dot MemberSelector .
 MemberSelector        -> string .
 ArraySelector         -> leftBracket ArrayOpSelector .
