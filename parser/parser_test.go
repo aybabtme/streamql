@@ -2,14 +2,16 @@ package parser
 
 import (
 	"encoding/json"
+	"io"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/aybabtme/streamql/ast"
+	"github.com/aybabtme/streamql/token"
 )
 
-func TestParse(t *testing.T) {
+func TestPositiveParse(t *testing.T) {
 
 	tests := []struct {
 		input string
@@ -299,6 +301,78 @@ func TestParse(t *testing.T) {
 			t.Errorf("want=%s", string(wantData))
 			t.Errorf(" got=%s", string(gotData))
 
+		}
+	}
+}
+
+func TestNegativeParse(t *testing.T) {
+
+	tests := []struct {
+		input string
+		want  error
+	}{
+		{
+			input: "",
+			want:  io.ErrUnexpectedEOF,
+		},
+		{
+			input: ".]",
+			want: &SyntaxError{
+				Expected: []token.Token{token.Comma, token.Pipe},
+				Actual:   token.RightBracket,
+			},
+		},
+		{
+			input: "hello",
+			want: &SyntaxError{
+				Expected: []token.Token{token.Dot},
+				Actual:   token.InlineString,
+			},
+		},
+		{
+			input: ".[1:2 | ]",
+			want: &SyntaxError{
+				Expected: []token.Token{token.RightBracket},
+				Actual:   token.Pipe,
+			},
+		},
+		{
+			input: ". hello",
+			want: &SyntaxError{
+				Expected: []token.Token{token.Comma, token.Pipe},
+				Actual:   token.InlineString,
+			},
+		},
+		{
+			input: ".|.|.|.|",
+			want:  io.ErrUnexpectedEOF,
+		},
+		{
+			input: ".,.,.,.,",
+			want:  io.ErrUnexpectedEOF,
+		},
+		{
+			input: ",",
+			want: &SyntaxError{
+				Expected: []token.Token{token.Dot},
+				Actual:   token.Comma,
+			},
+		},
+	}
+
+	for n, tt := range tests {
+		t.Logf("test #%d, input %q", n, tt.input)
+
+		tree, got := NewParser(strings.NewReader(tt.input)).Parse()
+		if got == nil {
+			treeData, _ := json.MarshalIndent(tree, "", "  ")
+			t.Errorf("tree=%s", string(treeData))
+		}
+		if !reflect.DeepEqual(tt.want, got) {
+			t.Errorf("want=%v", tt.want)
+			t.Errorf(" got=%v", got)
+			t.Errorf("want=%#v", tt.want)
+			t.Errorf(" got=%#v", got)
 		}
 	}
 }

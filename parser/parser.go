@@ -12,6 +12,32 @@ import (
 	"github.com/aybabtme/streamql/token"
 )
 
+var _ error = (*SyntaxError)(nil)
+
+func newSyntaxError(got token.Token, want ...token.Token) error {
+	return &SyntaxError{Expected: want, Actual: got}
+}
+
+type SyntaxError struct {
+	Expected []token.Token
+	Actual   token.Token
+}
+
+func (e *SyntaxError) Error() string {
+	var expect string
+	for i, exp := range e.Expected {
+		switch i {
+		case 0:
+			expect = exp.String()
+		case len(e.Expected) - 1:
+			expect += " or " + exp.String()
+		default:
+			expect += ", " + exp.String()
+		}
+	}
+	return fmt.Sprintf("expected %s, got %s", expect, e.Actual.String())
+}
+
 // Parser represents a parser.
 type Parser struct {
 	s   *scanner.Scanner
@@ -115,9 +141,7 @@ func (p *Parser) scanSelectorsStmt(stmt *ast.FilterStmt) error {
 		}
 		return nil
 	default:
-		return fmt.Errorf("expecting a %v or a %v, not a %v",
-			token.Comma, token.Pipe, tok,
-		)
+		return newSyntaxError(tok, token.Comma, token.Pipe)
 	}
 }
 
@@ -374,9 +398,7 @@ func (p *Parser) scanArrayOpIndexor(stmt *ast.ArraySelectorStmt, first int) erro
 		stmt.Index = &ast.IndexSelectorStmt{Index: first}
 		return nil
 	default:
-		return fmt.Errorf("expected a %v or a %v, not a %v",
-			token.Colon, token.RightBracket, tok,
-		)
+		return newSyntaxError(tok, token.Colon, token.RightBracket)
 	}
 }
 
@@ -386,7 +408,7 @@ func (p *Parser) scanString() (string, error) {
 		return "", err
 	}
 	if tok != token.InlineString {
-		return "", fmt.Errorf("expected a %v, not a %v", token.InlineString, tok)
+		return "", newSyntaxError(tok, token.InlineString)
 	}
 	return lit, nil
 }
@@ -397,7 +419,7 @@ func (p *Parser) scanInteger() (int, error) {
 		return 0, err
 	}
 	if tok != token.Integer {
-		return 0, fmt.Errorf("expected a %v, not a %v", token.Integer, tok)
+		return 0, newSyntaxError(tok, token.Integer)
 	}
 	return strconv.Atoi(lit)
 }
@@ -427,7 +449,7 @@ func (p *Parser) scanToken(want token.Token) error {
 		return err
 	}
 	if want != got {
-		return fmt.Errorf("expected a %v, not a %v", want, got)
+		return newSyntaxError(got, want)
 	}
 	return nil
 }
