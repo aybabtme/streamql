@@ -7,9 +7,9 @@ import (
 
 	"strconv"
 
-	"github.com/aybabtme/streamql/ast"
-	"github.com/aybabtme/streamql/scanner"
-	"github.com/aybabtme/streamql/token"
+	"github.com/aybabtme/streamql/lang/ast"
+	"github.com/aybabtme/streamql/lang/scanner"
+	"github.com/aybabtme/streamql/lang/token"
 )
 
 var _ error = (*SyntaxError)(nil)

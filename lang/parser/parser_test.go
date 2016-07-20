@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aybabtme/streamql/ast"
-	"github.com/aybabtme/streamql/token"
+	"github.com/aybabtme/streamql/lang/ast"
+	"github.com/aybabtme/streamql/lang/token"
 )
 
 func TestPositiveParse(t *testing.T) {

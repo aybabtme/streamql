@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/aybabtme/streamql/token"
+	"github.com/aybabtme/streamql/lang/token"
 )
 
 type Scanner struct {

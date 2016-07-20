@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aybabtme/streamql/token"
+	"github.com/aybabtme/streamql/lang/token"
 )
 
 func TestScan(t *testing.T) {
