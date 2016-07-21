@@ -6,7 +6,9 @@ import (
 	"io"
 	"log"
 	"os"
+	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/aybabtme/streamql/lang/parser"
 	"github.com/aybabtme/streamql/lang/vm"
@@ -14,6 +16,7 @@ import (
 )
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	log.SetFlags(0)
 	log.SetPrefix("protojq: ")
 	flag.Parse()
@@ -40,25 +43,41 @@ func main() {
 	dec := json.NewDecoder(in)
 	enc := json.NewEncoder(out)
 
-	engine := vm.ASTInterpreter(tree.Filters[0])
-	engine.Filter(
-		func() (msg.Message, bool) {
+	var wg sync.WaitGroup
+	wg.Add(2)
+	defer wg.Wait()
+
+	inc := make(chan msg.Message, runtime.NumCPU())
+	go func() {
+		defer wg.Done()
+		for {
 			var v interface{}
 			switch err := dec.Decode(&v); err {
 			case io.EOF:
-				return nil, false
+				close(inc)
+				return
 			case nil:
-				return msg.Naive(v), true
+				inc <- msg.Naive(v)
 			default:
 				log.Fatalf("invalid input: %v", err)
-				return nil, false
 			}
-		},
-		func(m msg.Message) bool {
+		}
+	}()
+
+	outc := make(chan msg.Message, runtime.NumCPU())
+	go func() {
+		defer wg.Done()
+		for m := range outc {
 			if err := enc.Encode(m.(*msg.NaiveMessage).Orig()); err != nil {
 				log.Fatalf("invalid output: %v", err)
 			}
-			return true
-		},
+		}
+	}()
+
+	engine := vm.ASTInterpreter(tree.Filters[0])
+	engine.Filter(
+		func() (msg.Message, bool) { msg, more := <-inc; return msg, more },
+		func(m msg.Message) bool { outc <- m; return true },
 	)
+	close(outc)
 }
