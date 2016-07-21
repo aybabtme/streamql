@@ -130,11 +130,24 @@ func (s *Scanner) scanInteger() (token.Token, string, error) {
 		return s.eosIfEOF(token.Illegal, buf.String(), err)
 	}
 
-	// first digit can't be 0 (no octals!)
-	if !isNonZeroDigit(ch) {
-		return s.eosIfEOF(token.Illegal, buf.String(), err)
-	}
 	buf.WriteRune(ch)
+
+	// if first digit is zero, it should be only digit
+	if isZeroDigit(ch) {
+		ch2, err := s.read()
+		switch err {
+		case io.EOF:
+			return token.Integer, buf.String(), nil
+		case nil: // continue
+		default:
+			return s.eosIfEOF(token.Illegal, buf.String(), err)
+		}
+		s.unread()
+		if isDigit(ch2) { //
+			return s.eosIfEOF(token.Illegal, buf.String(), err)
+		}
+		return token.Integer, buf.String(), nil
+	}
 
 	// then read subsequent Letter | Digit | EscapedKeyword
 	for {

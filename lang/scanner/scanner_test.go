@@ -33,6 +33,18 @@ func TestScan(t *testing.T) {
 			},
 		},
 		{
+			input: "1",
+			want: []literal{
+				{token.Integer, "1"},
+			},
+		},
+		{
+			input: "0",
+			want: []literal{
+				{token.Integer, "0"},
+			},
+		},
+		{
 			input: "hello",
 			want: []literal{
 				{token.InlineString, "hello"},

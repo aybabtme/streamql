@@ -1,22 +1,11 @@
 package vm
 
-type Message interface {
-	Member(string) (Message, bool)
-	Each() ([]Message, bool)
-	Range(from, to int) ([]Message, bool)
-	Index(int) (Message, bool)
-}
+import "github.com/aybabtme/streamql/lang/vm/msg"
 
 type Engine interface {
-	Filter(in []Message) (out [][]Message)
+	Filter(src Source, sink Sink)
 }
 
-// TBD
+type Source func() (msg.Message, bool)
 
-type Source interface {
-	Next() (Message, bool)
-}
-
-type Sink interface {
-	Next() (Message, bool)
-}
+type Sink func(msg.Message) bool

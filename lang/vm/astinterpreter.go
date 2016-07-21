@@ -2,32 +2,36 @@ package vm
 
 import (
 	"github.com/aybabtme/streamql/lang/ast"
+	"github.com/aybabtme/streamql/lang/vm/msg"
 )
 
-func ASTInterpreter(tree *ast.FiltersStmt) Engine {
+func ASTInterpreter(tree *ast.FilterStmt) Engine {
 	return &astEngine{tree: tree}
 }
 
 type astEngine struct {
-	tree *ast.FiltersStmt
+	tree *ast.FilterStmt
 }
 
-func (vm *astEngine) Filter(in []Message) (out [][]Message) {
-	for _, filter := range vm.tree.Filters {
-		var filterOut []Message
-		for _, msg := range in {
-			filterOut = append(filterOut, vm.filter(msg, filter)...)
+func (vm *astEngine) Filter(in Source, sink Sink) {
+	for {
+		msg, more := in()
+		if !more {
+			return
 		}
-		out = append(out, filterOut)
+		for _, out := range vm.filter(msg, vm.tree) {
+			if !sink(out) {
+				return
+			}
+		}
 	}
-	return out
 }
 
-func (vm *astEngine) filter(in Message, f *ast.FilterStmt) (out []Message) {
-	intermediary := []Message{in}
+func (vm *astEngine) filter(in msg.Message, f *ast.FilterStmt) (out []msg.Message) {
+	intermediary := []msg.Message{in}
 
 	for _, s := range f.Selectors {
-		var next []Message
+		var next []msg.Message
 		for _, inter := range intermediary {
 			next = append(next, vm.selector(inter, s)...)
 		}
@@ -37,17 +41,17 @@ func (vm *astEngine) filter(in Message, f *ast.FilterStmt) (out []Message) {
 	return intermediary
 }
 
-func (vm *astEngine) selector(in Message, s *ast.SelectorStmt) (out []Message) {
+func (vm *astEngine) selector(in msg.Message, s *ast.SelectorStmt) (out []msg.Message) {
 	if s.Object != nil {
 		return vm.objectSelector(in, s.Object)
 	}
 	if s.Array != nil {
 		return vm.arraySelector(in, s.Array)
 	}
-	return []Message{in}
+	return []msg.Message{in}
 }
 
-func (vm *astEngine) objectSelector(in Message, obj *ast.ObjectSelectorStmt) (out []Message) {
+func (vm *astEngine) objectSelector(in msg.Message, obj *ast.ObjectSelectorStmt) (out []msg.Message) {
 	child, ok := in.Member(obj.Member)
 	if !ok {
 		return nil
@@ -55,12 +59,12 @@ func (vm *astEngine) objectSelector(in Message, obj *ast.ObjectSelectorStmt) (ou
 	if obj.Child != nil {
 		return vm.selector(child, obj.Child)
 	}
-	return []Message{child}
+	return []msg.Message{child}
 }
 
-func (vm *astEngine) arraySelector(in Message, arr *ast.ArraySelectorStmt) []Message {
+func (vm *astEngine) arraySelector(in msg.Message, arr *ast.ArraySelectorStmt) []msg.Message {
 	var (
-		childs []Message
+		childs []msg.Message
 		ok     bool
 	)
 	switch {
@@ -79,9 +83,9 @@ func (vm *astEngine) arraySelector(in Message, arr *ast.ArraySelectorStmt) []Mes
 		if !ok {
 			return nil
 		}
-		childs = []Message{child}
+		childs = []msg.Message{child}
 	}
-	var out []Message
+	var out []msg.Message
 	if arr.Child != nil {
 		for _, child := range childs {
 			out = append(out, vm.selector(child, arr.Child)...)
