@@ -1,7 +1,6 @@
 package vm
 
 import (
-	"encoding/json"
 	"reflect"
 	"strings"
 	"testing"
@@ -119,37 +118,78 @@ func TestASTInterpreter(t *testing.T) {
 	}
 }
 
-// Array source
-
-type arraySource struct {
-	idx  int
-	msgs []msg.Message
+func BenchmarkASTEngine_Everything(b *testing.B) {
+	benchEngine(b, ".", ASTInterpreter)
 }
 
-func ArraySource(in []msg.Message) Source {
-	return (&arraySource{msgs: in}).Next
+func BenchmarkASTEngine_NoResult(b *testing.B) {
+	benchEngine(b, `.unexisting`, ASTInterpreter)
 }
 
-func (src *arraySource) Next() (msg.Message, bool) {
-	if src.idx >= len(src.msgs) {
-		return nil, false
-	}
-	msg := src.msgs[src.idx]
-	src.idx++
-	return msg, true
+func BenchmarkASTEngine_SimpleString(b *testing.B) {
+	benchEngine(b, ".aString", ASTInterpreter)
 }
 
-// JSON
-
-func ReadJSONMessage(data []byte) (msg.Message, error) {
-	var v interface{}
-	if err := json.Unmarshal(data, &v); err != nil {
-		return nil, err
-	}
-	return msg.Naive(v), nil
+func BenchmarkASTEngine_SimpleNumber(b *testing.B) {
+	benchEngine(b, ".aNumber", ASTInterpreter)
 }
 
-func WriteJSONMessage(msg *msg.NaiveMessage) []byte {
-	data, _ := json.Marshal(msg.Orig())
-	return data
+func BenchmarkASTEngine_SimpleArray(b *testing.B) {
+	benchEngine(b, ".anArray", ASTInterpreter)
+}
+
+func BenchmarkASTEngine_SimpleObject(b *testing.B) {
+	benchEngine(b, ".anObject", ASTInterpreter)
+}
+
+func BenchmarkASTEngine_ExplodeArray(b *testing.B) {
+	benchEngine(b, ".anArray[]", ASTInterpreter)
+}
+
+func BenchmarkASTEngine_IndexArray(b *testing.B) {
+	benchEngine(b, ".anArray[0]", ASTInterpreter)
+}
+
+func BenchmarkASTEngine_RangeArray(b *testing.B) {
+	benchEngine(b, ".anArray[0:2]", ASTInterpreter)
+}
+
+func BenchmarkASTEngine_ExplodeArraySelect(b *testing.B) {
+	benchEngine(b, ".anArray[].aString", ASTInterpreter)
+}
+
+func BenchmarkASTEngine_IndexArraySelect(b *testing.B) {
+	benchEngine(b, ".anArray[0].aString", ASTInterpreter)
+}
+
+func BenchmarkASTEngine_RangeArraySelect(b *testing.B) {
+	benchEngine(b, ".anArray[0:2].aString", ASTInterpreter)
+}
+
+func BenchmarkASTEngine_ObjectSelectString(b *testing.B) {
+	benchEngine(b, ".anObject.aString", ASTInterpreter)
+}
+
+func BenchmarkASTEngine_ObjectSelectNumber(b *testing.B) {
+	benchEngine(b, ".anObject.aNumber", ASTInterpreter)
+}
+
+func BenchmarkASTEngine_ObjectSelectArray(b *testing.B) {
+	benchEngine(b, ".anObject.anArray", ASTInterpreter)
+}
+
+func BenchmarkASTEngine_ObjectSelectObject(b *testing.B) {
+	benchEngine(b, ".anObject.anObject", ASTInterpreter)
+}
+
+func BenchmarkASTEngine_ObjectSelectExplodeArray(b *testing.B) {
+	benchEngine(b, ".anObject.anArray[]", ASTInterpreter)
+}
+
+func BenchmarkASTEngine_ObjectSelectIndexArray(b *testing.B) {
+	benchEngine(b, ".anObject.anArray[0]", ASTInterpreter)
+}
+
+func BenchmarkASTEngine_ObjectSelectRangeArray(b *testing.B) {
+	benchEngine(b, ".anObject.anArray[0:2]", ASTInterpreter)
 }
