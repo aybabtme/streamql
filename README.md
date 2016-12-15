@@ -4,6 +4,19 @@
 - a **small query language** used to slice and dice streams of messages, and
 - a **virtual machine** that can interpret the language and execute it against a stream of _message_.
 
+## Description
+
+_Messages_ in `streamql` can have the following types:
+- **string**: is an ordered list of letters (currently the grammar only supports letters in `[a-Z]` 😅 )
+- **number**: is a real value (currently the grammar has a bug and only supports the integer part of numbers 😅 )
+- **array**: is an ordered list of _messages_.
+- **object**: is an unordered map of **string** to _message_.
+
+The query language can then be used to select parts of individual message and (to be done 😅) filter messages
+based on their content.
+
+Basically it works quite a bit like [`./jq`](https://stedolan.github.io/jq/) but implements only part of a similar language and an engine to process arbitrary structured messages (not just JSON). The idea is that you can make `jq`-like tools for arbitrary structured message formats that support the types in the shape of a _message_.
+
 ## Usage
 
 ```go
@@ -31,19 +44,6 @@ engine.Filter(
     func(m msg.Message) bool { outc <- m; return true },
 )
 ```
-
-## Description
-
-_Messages_ in `streamql` can have the following types:
-- **string**: is an ordered list of letters (currently the grammar only supports letters in `[a-Z]` 😅 )
-- **number**: is a real value (currently the grammar has a bug and only supports the integer part of numbers 😅 )
-- **array**: is an ordered list of _messages_.
-- **object**: is an unordered map of **string** to _message_.
-
-The query language can then be used to select parts of individual message and (to be done 😅) filter messages
-based on their content.
-
-Basically it works quite a bit like [`./jq`](https://stedolan.github.io/jq/) but implements only part of a similar language and an engine to process arbitrary structured messages (not just JSON). The idea is that you can make `jq`-like tools for arbitrary structured message formats that support the types in the shape of a _message_.
 
 ## Goals
 
