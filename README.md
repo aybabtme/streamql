@@ -4,6 +4,34 @@
 - a **small query language** used to slice and dice streams of messages, and
 - a **virtual machine** that can interpret the language and execute it against a stream of _message_.
 
+## Usage
+
+```go
+import (
+	"github.com/aybabtme/streamql/lang/parser"
+	"github.com/aybabtme/streamql/lang/vm"
+	"github.com/aybabtme/streamql/lang/vm/msg"
+)
+
+// with streams of input and output messages
+inc := make(chan msg.Message)
+outc := make(chan msg.Message)
+
+// parse a query
+ast, err := parser.NewParser(query).Parse()
+if err != nil {
+    log.Fatalf("invalid query: %v", err)
+}
+
+// execute the filters (a query can contain many filters)
+filter := tree.Filters[0]
+engine := vm.ASTInterpreter(filter)
+engine.Filter(
+    func() (msg.Message, bool) { msg, more := <-inc; return msg, more },
+    func(m msg.Message) bool { outc <- m; return true },
+)
+```
+
 ## Description
 
 _Messages_ in `streamql` can have the following types:
