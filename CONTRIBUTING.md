@@ -10,7 +10,7 @@ Before starting work on a PR, consider what kind of PR you think you'll send:
 
 - **small bug fix, performance tweaks**: go ahead!
 - **refactors, larger changes**: please file an issue describing your intent.
-- **new features**: please file an issue describing the.
+- **new features**: please file an issue describing the feature.
 
 ## Be concise
 
