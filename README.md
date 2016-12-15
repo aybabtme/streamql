@@ -17,17 +17,12 @@ based on their content.
 
 Basically it works quite a bit like [`./jq`](https://stedolan.github.io/jq/) but implements only part of a similar language and an engine to process arbitrary structured messages (not just JSON). The idea is that you can make `jq`-like tools for arbitrary structured message formats that support the types in the shape of a _message_.
 
-## Stability
+## Goals
 
-Consider the package to be version 0. It will change, you should vendor the package if you want to have reproducible builds. When the grammar and VMs support the basic features of a v1, a git tag will be set.
-
-## Contributing
-
-Wait before firing up your editor! Please see [`CONTRIBUTING`](CONTRIBUTING.md). Not much process, but just to keep my sanity as a very part time open-source person.
-
-## License
-
-MIT.
+* performance: the language must be fast to parse, the grammar be unambiguous, and execution of queries on streams must be rapid.
+* memory: the VM must use a bounded amount of memory to process any stream of message.
+* simple language: features in the language must remain minimalistic and be orthogonal to one another.
+* generic semantic: the language should be appliable on any dataformat that respects the __message__ semantics.
 
 ## Example queries
 
@@ -53,3 +48,15 @@ MIT.
 .[42][42:42]
 .[42:42][42:42]
 ```
+
+## Stability
+
+Consider the package to be version 0. It will change, you should vendor the package if you want to have reproducible builds. When the grammar and VMs support the basic features of a v1, a git tag will be set.
+
+## Contributing
+
+Wait before firing up your editor! Please see [`CONTRIBUTING`](CONTRIBUTING.md). Not much process, but just to keep my sanity as a very part time open-source person.
+
+## License
+
+MIT.
