@@ -1,0 +1,28 @@
+# Things to do
+
+- [ ] Support booleans.
+- [ ] Support real numbers.
+    - [ ] Support parsing more than just integer.
+- [ ] Support filter queries.
+    - [ ] boolean algebra, ideas are:
+        - [ ] `or` keyword
+        - [ ] `and` keyword
+        - [ ] `xor` keyword
+        - [ ] `not` keyword
+    - [ ] numerical comparisons, ideas are:
+        - [ ] `<` keyword
+        - [ ] `>` keyword
+        - [ ] `<=` keyword
+        - [ ] `>=` keyword
+        - [ ] `==` keyword
+    - [ ] numerical operations, ideas are:
+        - [ ] `+`, `-`, `*`, `/`, `^`, and so on.
+    - [ ] string operations, ideas are:
+        - [ ] `contains`
+        - [ ] `regexp`
+        - [ ] `length`
+        - [ ] `fuzzy` to fuzzy match
+        - [ ] `substr` to do substrings
+- [ ] Support mutation of messages, ideas are:
+    - [ ] `=` keyword that _sets_ or _updates_ the value of a field
+    - [ ] `delete` keyword that _deletes_ a field
