@@ -4,6 +4,8 @@
 - [ ] Support real numbers.
     - [ ] Support parsing more than just integer.
 - [ ] Support filter queries.
+    - [ ] selection queries:
+        - [ ] `select` to whitelist objects
     - [ ] boolean algebra, ideas are:
         - [ ] `or` keyword
         - [ ] `and` keyword
@@ -15,14 +17,14 @@
         - [ ] `<=` keyword
         - [ ] `>=` keyword
         - [ ] `==` keyword
-    - [ ] numerical operations, ideas are:
+    - [ ] numerical algebra, ideas are:
         - [ ] `+`, `-`, `*`, `/`, `^`, and so on.
     - [ ] string operations, ideas are:
         - [ ] `contains`
         - [ ] `regexp`
         - [ ] `length`
         - [ ] `fuzzy` to fuzzy match
-        - [ ] `substr` to do substrings
+        - [ ] `substr` to emit substrings
 - [ ] Support mutation of messages, ideas are:
     - [ ] `=` keyword that _sets_ or _updates_ the value of a field
     - [ ] `delete` keyword that _deletes_ a field
