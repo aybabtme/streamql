@@ -32,10 +32,10 @@ EmitBoolFunc  -> FuncStrContains
                | AlgBoolOps .
 EmitStrFunc   -> FuncStrSubstr .
 EmitAnyFunc   -> FuncAnySelect .
-EmitNumFunc   -> EmitintFunc
+EmitNumFunc   -> EmitIntFunc
                | EmitFloatFunc
                | AlgNumOps .
-EmitintFunc   -> FuncStrLength .
+EmitIntFunc   -> FuncStrLength .
 EmitFloatFunc -> epsilon .
 
 AlgBoolOps -> FuncBoolOr
@@ -52,12 +52,12 @@ Member -> FieldIdentifier .
 EachKw -> OpenArrayKw CloseArrayKw .
 RangeEachKw -> OpenArrayKw Range CloseArrayKw .
 IndexKw -> OpenArrayKw Index CloseArrayKw .
-Range -> int RangeSepKw int .
-Index -> int .
+Range -> IntArg RangeSepKw IntArg .
+Index -> IntArg .
 
 FuncStrContains -> ContainsKw OpenFuncKw StrArg ArgSepKw Sel CloseFuncKw .
 FuncStrRegexp   -> RegexpKw OpenFuncKw StrArg ArgSepKw Sel CloseFuncKw .
-FuncStrSubstr   -> SubStrKw OpenFuncKw StrArg ArgSepKw int ArgSepKw int CloseFuncKw .
+FuncStrSubstr   -> SubStrKw OpenFuncKw StrArg ArgSepKw IntArg ArgSepKw IntArg CloseFuncKw .
 FuncStrLength   -> LengthKw OpenFuncKw StrArg CloseFuncKw .
 
 FuncAnySelect      -> SelectKw OpenFuncKw BoolArg CloseFuncKw .
@@ -97,8 +97,8 @@ BoolArg -> Bool
          | EmitBoolFunc .
 NumArg -> Num
         | EmitNumFunc .
-intArg -> int
-        | EmitintFunc .
+IntArg -> Int
+        | EmitIntFunc .
 
 Str    -> OpenStrKw SubStr CloseStrKw .
 SubStr -> Letter SubStr
@@ -107,11 +107,11 @@ SubStr -> Letter SubStr
 
 Bool -> bool_class .
 
-Num             -> int SubNum .
+Num             -> Int SubNum .
 SubNum          -> SubDecimalPart SubExponentPart
-SubDecimalPart  -> DecimalKw int
+SubDecimalPart  -> DecimalKw Int
                  | epsilon .
-SubExponentPart -> sci_notation_class int
+SubExponentPart -> sci_notation_class Int
                  | epsilon .
 
 
@@ -146,31 +146,34 @@ ArrayOpSel    -> CloseArrayKw
                | Whitespace Int Whitespace ArrayOpIdx .
 ArrayOpIdx    -> RangeSepKw Whitespace Int Whitespace CloseArrayKw
                | CloseArrayKw .
-EmitBoolFunc  -> FuncStrContains
-               | FuncStrRegexp
-               | AlgBoolOps .
-EmitStrFunc   -> FuncStrSubStr .
-EmitAnyFunc   -> FuncAnySelect .
-EmitNumFunc   -> EmitIntFunc
-               | EmitFloatFunc
-               | AlgNumOps .
-EmitIntFunc   -> FuncStrLength .
-EmitFloatFunc -> epsilon .
+EmitStrFunc   -> BuiltinStrFunc .
+EmitAnyFunc   -> BuiltinAnyFunc .
+EmitNumFunc   -> AlgNumOps .
+EmitBoolFunc  -> AlgBoolOps .
+
+BuiltinStrFunc   -> FuncStrSubStr .
+BuiltinAnyFunc   -> FuncAnySelect .
+BuiltinIntFunc   -> FuncStrLength .
+BuiltinFloatFunc -> epsilon .
+
+AllEmitBoolFunc -> FuncStrContains
+                 | FuncStrRegexp .
 
 AlgBoolOps       -> BoolArg AlgBoolOpsTwoAry
                   | AlgBoolOpsUnary .
 AlgBoolOpsUnary  -> FuncBoolNot .
 AlgBoolOpsTwoAry -> FuncBoolOr
                   | FuncBoolAnd
-                  | FuncBoolXOR .
+                  | FuncBoolXOR
+                  | epsilon .
 
 AlgNumOps       -> NumArg AlgNumOpsTwoAry
-                 | AlgNumOpsUnary .
-AlgNumOpsUnary  -> FuncNumInvert .
+                 | OpenPriorityKw AlgNumOps ClosePriorityKw .
 AlgNumOpsTwoAry -> FuncNumAdd
                  | FuncNumSubtract
                  | FuncNumMultiply
-                 | FuncNumDivide .
+                 | FuncNumDivide
+                 | epsilon .
 
 FuncStrContains -> ContainsKw OpenFuncKw StrArg ArgSepKw Sel CloseFuncKw .
 FuncStrRegexp   -> RegexpKw OpenFuncKw StrArg ArgSepKw Sel CloseFuncKw .
@@ -183,7 +186,6 @@ FuncBoolAnd     -> AndKw BoolArg .
 FuncBoolXOR     -> XORKw BoolArg .
 FuncBoolNot     -> NotKw BoolArg .
 
-FuncNumInvert   -> InvKw NumArg .
 FuncNumAdd      -> AddKw NumArg .
 FuncNumSubtract -> SubtractKw NumArg .
 FuncNumMultiply -> MultiplyKw NumArg .
@@ -195,9 +197,10 @@ Whitespace -> whitespace Whitespace
 StrArg  -> Str
          | EmitStrFunc .
 BoolArg -> Bool
-         | EmitBoolFunc .
+         | AllEmitBoolFunc .
 NumArg  -> Num
-         | EmitNumFunc .
+         | EmitIntFunc
+         | EmitFloatFunc .
 IntArg  -> Int
          | EmitIntFunc .
 
@@ -234,21 +237,23 @@ SelectKw   -> select_class .
 LengthKw   -> length_class .
 SubStrKw   -> substring_class .
 
-OpenFuncKw  -> left_parens_class .
-CloseFuncKw -> right_parens_class .
-ArgSepKw    -> comma_class .
-OrKw        -> or_class .
-AndKw       -> and_class .
-NotKw       -> not_class .
-XORKw       -> xor_class .
-InvKw       -> inv_class .
-AddKw       -> add_class .
-SubtractKw  -> substract_class .
-MultiplyKw  -> multiply_class .
-DivideKw    -> divide_class .
-OpenStrKw   -> quote_class .
-CloseStrKw  -> quote_class .
-DecimalKw   -> dot_class .
+OpenFuncKw      -> left_parens_class .
+CloseFuncKw     -> right_parens_class .
+OpenPriorityKw  -> left_parens_class .
+ClosePriorityKw -> right_parens_class .
+ArgSepKw        -> comma_class .
+OrKw            -> or_class .
+AndKw           -> and_class .
+NotKw           -> not_class .
+XORKw           -> xor_class .
+InvKw           -> inv_class .
+AddKw           -> add_class .
+SubtractKw      -> substract_class .
+MultiplyKw      -> multiply_class .
+DivideKw        -> divide_class .
+OpenStrKw       -> quote_class .
+CloseStrKw      -> quote_class .
+DecimalKw       -> dot_class .
 
 
 /* Lexical */
@@ -256,7 +261,7 @@ DecimalKw   -> dot_class .
 Lexicon -> Whitespace
          | FieldIdentifier
          | Kws
-         | int.
+         | Int.
 
 /* special */
 
@@ -292,8 +297,8 @@ EscapedKw -> Kws
                 | Whitespace .
 Letter -> letter_class .
 Digit -> digit_class .
-int -> zero_digit_class
-         | non_zero_digit_class int .
+Int -> zero_digit_class
+     | non_zero_digit_class Int .
 
 /* terminals -> regexp */
 
