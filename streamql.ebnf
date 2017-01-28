@@ -215,14 +215,17 @@ Digit  -> digit_class .
 Bool -> bool .
 
 Num             -> Int SubNum
-                 | InvKw Int SubNum .
+                 | SubNum
+                 | InvKv SubNum .
 SubNum          -> SubDecimalPart SubExponentPart .
 SubDecimalPart  -> DecimalKw Int
                  | epsilon .
 SubExponentPart -> sci_notation Int
                  | epsilon .
-Int             -> zero_digit_class
-                 | non_zero_digit_class Int .
+Int             -> SubInt
+                 | InvKw SubInt .
+SubInt          -> zero_digit_class
+                 | non_zero_digit_class SubInt .
 
 FilterSepKw  -> comma_class .
 PipeSepKw    -> pipe_class .
@@ -303,7 +306,7 @@ Int -> zero_digit_class
 /* terminals -> regexp */
 
 epsilon -> "" .
-whitespace_class -> " " .
+whitespace_class -> " " | "\n" | "\t" | "\r" .
 pipe_class -> "|" .
 comma_class -> "," .
 dot_class -> "." .

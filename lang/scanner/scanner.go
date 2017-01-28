@@ -24,21 +24,27 @@ func (s *Scanner) Scan() (tok token.Token, lit string, err error) {
 	var rule func() (token.Token, string, error)
 	switch {
 
-	case isNonZeroDigit(ch) || isZeroDigit(ch):
-		rule = s.scanInteger
+	case isNegativeSign(ch) || isNonZeroDigit(ch) || isZeroDigit(ch):
+		rule = s.scanNumber
 
 	case isLetter(ch) || isEscapeCharacter(ch):
-		rule = s.scanFieldIdentifier
+		rule = s.scanInlineString
+
+	case isQuote(ch):
+		rule = s.scanString
 
 	case isWhitespace(ch):
 		rule = s.scanWhitespace
 
-	case isColon(ch),
+	case isComma(ch),
+		isPipe(ch),
+		isDot(ch),
 		isRightBracket(ch),
 		isLeftBracket(ch),
-		isDot(ch),
-		isPipe(ch),
-		isComma(ch):
+		isRightParens(ch),
+		isLeftParens(ch),
+		isQuote(ch),
+		isColon(ch):
 
 		rule = s.scanKeyword
 
@@ -67,7 +73,7 @@ func (s *Scanner) scanWhitespace() (token.Token, string, error) {
 	}
 }
 
-func (s *Scanner) scanFieldIdentifier() (token.Token, string, error) {
+func (s *Scanner) scanInlineString() (token.Token, string, error) {
 	// inline string
 	buf := bytes.NewBuffer(nil)
 
@@ -80,6 +86,7 @@ func (s *Scanner) scanFieldIdentifier() (token.Token, string, error) {
 	switch {
 	case isLetter(ch):
 	case isEscapeCharacter(ch):
+		buf.WriteRune(ch)
 		ch, err = s.read()
 		if err != nil {
 			return s.eosIfEOF(token.Illegal, buf.String(), err)
@@ -106,6 +113,7 @@ func (s *Scanner) scanFieldIdentifier() (token.Token, string, error) {
 		case isDigit(ch): // accept digits
 		case isLetter(ch):
 		case isEscapeCharacter(ch):
+			buf.WriteRune(ch)
 			ch, err = s.read() // read past the \
 			if err != nil {
 				return s.eosIfEOF(token.Illegal, buf.String(), err)
@@ -122,47 +130,191 @@ func (s *Scanner) scanFieldIdentifier() (token.Token, string, error) {
 	}
 }
 
-func (s *Scanner) scanInteger() (token.Token, string, error) {
+func (s *Scanner) scanString() (token.Token, string, error) {
 	buf := bytes.NewBuffer(nil)
-
 	ch, err := s.read()
 	if err != nil {
 		return s.eosIfEOF(token.Illegal, buf.String(), err)
 	}
-
+	if !isQuote(ch) {
+		return s.eosIfEOF(token.Illegal, buf.String(), err)
+	}
 	buf.WriteRune(ch)
 
-	// if first digit is zero, it should be only digit
-	if isZeroDigit(ch) {
-		ch2, err := s.read()
-		switch err {
-		case io.EOF:
-			return token.Integer, buf.String(), nil
-		case nil: // continue
-		default:
-			return s.eosIfEOF(token.Illegal, buf.String(), err)
-		}
-		s.unread()
-		if isDigit(ch2) { //
-			return s.eosIfEOF(token.Illegal, buf.String(), err)
-		}
-		return token.Integer, buf.String(), nil
-	}
-
-	// then read subsequent Letter | Digit | EscapedKeyword
+	// read subsequent Letter | Digit | Escaped quotes & whitespace
 	for {
 		ch, err := s.read()
 		switch err {
 		case io.EOF:
-			return token.Integer, buf.String(), nil
+			// incomplete string, missing closing quote
+			return s.eosIfEOF(token.Illegal, buf.String(), nil)
 		case nil: // continue
 		default:
 			return s.eosIfEOF(token.Illegal, buf.String(), err)
 		}
+		switch {
+		case isStringCharacter(ch):
+		case isEscapeCharacter(ch):
+			buf.WriteRune(ch)
+			ch, err = s.read() // read past the \
+			if err != nil {
+				return s.eosIfEOF(token.Illegal, buf.String(), err)
+			}
+			if !isQuote(ch) && !isEscapeCharacter(ch) && !isControlCode(ch) {
+				return s.eosIfEOF(token.Illegal, buf.String(), err)
+			}
+		case isQuote(ch):
+			// we're done reading the string
+			buf.WriteRune(ch)
+			return token.String, buf.String(), nil
+		default:
+			return s.eosIfEOF(token.Illegal, buf.String(), err)
+		}
+		buf.WriteRune(ch)
+	}
+
+}
+
+func (s *Scanner) scanNumber() (token.Token, string, error) {
+	buf := bytes.NewBuffer(nil)
+
+	tok, lit, err := s.scanInteger()
+	switch err {
+	case io.EOF:
+		return tok, lit, nil
+	case nil: // continue
+	default:
+		return s.eosIfEOF(token.Illegal, lit, err)
+	}
+	buf.WriteString(lit)
+
+	// check if there's a decimal or scientific part
+	ch, err := s.read()
+	switch err {
+	case io.EOF:
+		s.unread()
+		return tok, lit, err
+	case nil: // continue
+	default:
+		return s.eosIfEOF(token.Illegal, buf.String(), err)
+	}
+
+	switch {
+	case isDot(ch):
+		buf.WriteRune(ch)
+		// read the decimal part
+		err = s.scanDigits(buf)
+		switch err {
+		case io.EOF:
+			return token.Float, buf.String(), nil
+		case nil: // continue
+		default:
+			return s.eosIfEOF(token.Illegal, buf.String(), err)
+		}
+
+	case isScientificExponent(ch): // continue
+		s.unread() // we'll scan it back
+
+	default:
+		// there was no decimal part
+		s.unread()
+		return token.Integer, buf.String(), nil
+	}
+
+	// if we're still scanning a number, it should be
+	// a scientific exponent part
+	ch, err = s.read()
+	switch err {
+	case io.EOF:
+		s.unread() // no exponent part
+		return token.Float, buf.String(), nil
+	case nil: // continue
+	default:
+		return s.eosIfEOF(token.Illegal, buf.String(), err)
+	}
+
+	if !isScientificExponent(ch) {
+		s.unread() // no exponent part
+		return token.Float, buf.String(), nil
+	}
+
+	// we have an exponent part
+	buf.WriteRune(ch)
+	tok, lit, err = s.scanInteger() // don't care for token
+	if err != nil && err != io.EOF {
+		return s.eosIfEOF(token.Illegal, buf.String(), err)
+	}
+	buf.WriteString(lit)
+	if tok != token.Integer {
+		return s.eosIfEOF(token.Illegal, buf.String(), err)
+	}
+	return token.Float, buf.String(), nil
+}
+
+func (s *Scanner) scanInteger() (token.Token, string, error) {
+	buf := bytes.NewBuffer(nil)
+	ch, err := s.read()
+	switch err {
+	case io.EOF:
+		return s.eosIfEOF(token.Illegal, buf.String(), err)
+	case nil: // continue
+	default:
+		return s.eosIfEOF(token.Illegal, buf.String(), err)
+	}
+
+	if isNegativeSign(ch) {
+		buf.WriteRune(ch)
+		ch, err = s.read() // consume it
+		switch err {
+		case io.EOF:
+			// expected something
+			return s.eosIfEOF(token.Illegal, buf.String(), err)
+		case nil: // continue
+		default:
+			return s.eosIfEOF(token.Illegal, buf.String(), err)
+		}
+	}
+	buf.WriteRune(ch)
+
+	if isZeroDigit(ch) {
+		// make sure next char is not a digit
+		ch2, err := s.read()
+		if err != nil && err != io.EOF {
+			return s.eosIfEOF(token.Illegal, buf.String(), err)
+		}
+		if isNonZeroDigit(ch2) {
+			buf.WriteRune(ch2) // add it to the error
+			tok, lit, err := s.eosIfEOF(token.Illegal, buf.String(), err)
+			return tok, lit, err
+		}
+		s.unread() // return what we read
+		return token.Integer, buf.String(), err
+	}
+
+	if !isDigit(ch) {
+		return s.eosIfEOF(token.Illegal, buf.String(), err)
+	}
+
+	// read the rest of the digits
+	err = s.scanDigits(buf)
+	switch err {
+	case io.EOF, nil: // continue
+		return token.Integer, buf.String(), err
+	default:
+		return s.eosIfEOF(token.Illegal, buf.String(), err)
+	}
+}
+
+func (s *Scanner) scanDigits(buf *bytes.Buffer) error {
+	for {
+		ch, err := s.read()
+		if err != nil {
+			return err
+		}
 		if !isDigit(ch) {
-			// past the end of what's a valid Integer
+			// past the end of what are digits
 			s.unread()
-			return token.Integer, buf.String(), nil
+			return nil
 		}
 		buf.WriteRune(ch)
 	}
@@ -174,18 +326,24 @@ func (s *Scanner) scanKeyword() (token.Token, string, error) {
 		return s.eosIfEOF(token.Illegal, "", err)
 	}
 	switch {
-	case isColon(ch):
-		return token.Colon, string(ch), nil
+	case isComma(ch):
+		return token.Comma, string(ch), nil
+	case isPipe(ch):
+		return token.Pipe, string(ch), nil
+	case isDot(ch):
+		return token.Dot, string(ch), nil
 	case isRightBracket(ch):
 		return token.RightBracket, string(ch), nil
 	case isLeftBracket(ch):
 		return token.LeftBracket, string(ch), nil
-	case isDot(ch):
-		return token.Dot, string(ch), nil
-	case isPipe(ch):
-		return token.Pipe, string(ch), nil
-	case isComma(ch):
-		return token.Comma, string(ch), nil
+	case isRightParens(ch):
+		return token.RightParens, string(ch), nil
+	case isLeftParens(ch):
+		return token.LeftParens, string(ch), nil
+	case isQuote(ch):
+		return token.Quote, string(ch), nil
+	case isColon(ch):
+		return token.Colon, string(ch), nil
 	default:
 		return s.eosIfEOF(token.Illegal, "", err)
 	}
@@ -193,17 +351,26 @@ func (s *Scanner) scanKeyword() (token.Token, string, error) {
 
 // lexicon's first set
 
-func isWhitespace(ch rune) bool      { return ch == ' ' || ch == '\t' || ch == '\n' }
-func isZeroDigit(ch rune) bool       { return ch == '0' }
-func isNonZeroDigit(ch rune) bool    { return ch > '0' && ch <= '9' }
-func isComma(ch rune) bool           { return (ch == ',') }
-func isPipe(ch rune) bool            { return (ch == '|') }
-func isDot(ch rune) bool             { return (ch == '.') }
-func isLeftBracket(ch rune) bool     { return (ch == '[') }
-func isRightBracket(ch rune) bool    { return (ch == ']') }
-func isColon(ch rune) bool           { return (ch == ':') }
-func isEscapeCharacter(ch rune) bool { return (ch == '\\') }
-func isLetter(ch rune) bool          { return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') }
+func isStringCharacter(ch rune) bool    { return isSpace(ch) || isLetter(ch) || isDigit(ch) }
+func isWhitespace(ch rune) bool         { return isSpace(ch) || isControlChar(ch) }
+func isSpace(ch rune) bool              { return ch == ' ' }
+func isNegativeSign(ch rune) bool       { return ch == '-' }
+func isZeroDigit(ch rune) bool          { return ch == '0' }
+func isNonZeroDigit(ch rune) bool       { return ch > '0' && ch <= '9' }
+func isScientificExponent(ch rune) bool { return ch == 'e' }
+func isComma(ch rune) bool              { return (ch == ',') }
+func isPipe(ch rune) bool               { return (ch == '|') }
+func isDot(ch rune) bool                { return (ch == '.') }
+func isLeftBracket(ch rune) bool        { return (ch == '[') }
+func isRightBracket(ch rune) bool       { return (ch == ']') }
+func isLeftParens(ch rune) bool         { return (ch == '(') }
+func isRightParens(ch rune) bool        { return (ch == ')') }
+func isQuote(ch rune) bool              { return (ch == '"') }
+func isColon(ch rune) bool              { return (ch == ':') }
+func isEscapeCharacter(ch rune) bool    { return (ch == '\\') }
+func isLetter(ch rune) bool             { return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') }
+func isControlChar(ch rune) bool        { return ch == '\t' || ch == '\n' || ch == '\r' }
+func isControlCode(ch rune) bool        { return ch == 't' || ch == 'n' || ch == 'r' }
 
 func isDigit(ch rune) bool { return isZeroDigit(ch) || isNonZeroDigit(ch) }
 
@@ -213,6 +380,9 @@ func isEscapedKeyword(ch rune) bool {
 		isDot(ch) ||
 		isLeftBracket(ch) ||
 		isRightBracket(ch) ||
+		isLeftParens(ch) ||
+		isRightParens(ch) ||
+		isQuote(ch) ||
 		isColon(ch) ||
 		isWhitespace(ch) || // can insert whitespace in strings
 		isEscapeCharacter(ch) // need to be able to \ the \ symbol (\\)

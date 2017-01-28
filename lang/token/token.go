@@ -11,7 +11,9 @@ const (
 
 	// Literals
 	InlineString
+	String
 	Integer
+	Float
 
 	// MiscCharacters
 	Comma
@@ -19,5 +21,8 @@ const (
 	Dot
 	LeftBracket
 	RightBracket
+	LeftParens
+	RightParens
+	Quote
 	Colon
 )

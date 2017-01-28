@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io"
 
-	"strconv"
-
 	"github.com/aybabtme/streamql/lang/ast"
 	"github.com/aybabtme/streamql/lang/scanner"
 	"github.com/aybabtme/streamql/lang/token"
@@ -324,7 +322,7 @@ func (p *Parser) scanObjectSelector() (*ast.ObjectSelectorStmt, error) {
 }
 
 func (p *Parser) scanMemberSelector() (*ast.ObjectSelectorStmt, error) {
-	str, err := p.scanString()
+	str, err := p.scanInlineString()
 	if err != nil {
 		return nil, err
 	}
@@ -402,7 +400,7 @@ func (p *Parser) scanArrayOpIndexor(stmt *ast.ArraySelectorStmt, first int) erro
 	}
 }
 
-func (p *Parser) scanString() (string, error) {
+func (p *Parser) scanInlineString() (string, error) {
 	tok, lit, err := p.scan()
 	if err != nil {
 		return "", err
@@ -410,7 +408,8 @@ func (p *Parser) scanString() (string, error) {
 	if tok != token.InlineString {
 		return "", newSyntaxError(tok, token.InlineString)
 	}
-	return lit, nil
+
+	return scanner.ParseInlineString(lit)
 }
 
 func (p *Parser) scanInteger() (int, error) {
@@ -421,7 +420,7 @@ func (p *Parser) scanInteger() (int, error) {
 	if tok != token.Integer {
 		return 0, newSyntaxError(tok, token.Integer)
 	}
-	return strconv.Atoi(lit)
+	return scanner.ParseInteger(lit)
 }
 
 func (p *Parser) scanWhitespace() error {
