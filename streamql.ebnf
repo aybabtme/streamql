@@ -72,6 +72,19 @@ FuncNumSubtract -> NumArg SubtractKw NumArg .
 FuncNumMultiply -> NumArg MultiplyKw NumArg .
 FuncNumDivide   -> NumArg DivideKw NumArg .
 
+StrArg -> Str
+        | EmitStrFunc
+        | Sel .
+BoolArg -> Bool
+         | EmitBoolFunc
+         | Sel .
+NumArg -> Num
+        | EmitNumFunc
+        | Sel .
+IntArg -> Int
+        | EmitIntFunc
+        | Sel .
+
 ContainsKw  -> contains_class .
 RegexpKw    -> regexp_class .
 SelectKw    -> select_class .
@@ -91,14 +104,6 @@ DivideKw    -> divide_class .
 OpenStrKw   -> quote_class .
 CloseStrKw  -> quote_class .
 
-StrArg -> Str
-        | EmitStrFunc .
-BoolArg -> Bool
-         | EmitBoolFunc .
-NumArg -> Num
-        | EmitNumFunc .
-IntArg -> Int
-        | EmitIntFunc .
 
 Str    -> OpenStrKw SubStr CloseStrKw .
 SubStr -> Letter SubStr
@@ -116,7 +121,6 @@ SubExponentPart -> sci_notation_class Int
 
 
 /* LL(1) (better implementable) */
-
 
 Start         -> Filters .
 Filters       -> Filter Whitespace FilterChain .
@@ -146,17 +150,17 @@ ArrayOpSel    -> CloseArrayKw
                | Whitespace Int Whitespace ArrayOpIdx .
 ArrayOpIdx    -> RangeSepKw Whitespace Int Whitespace CloseArrayKw
                | CloseArrayKw .
-EmitStrFunc   -> BuiltinStrFunc .
-EmitAnyFunc   -> BuiltinAnyFunc .
+EmitStrFunc   -> BuiltInStrFunc .
+EmitAnyFunc   -> BuiltInAnyFunc .
 EmitNumFunc   -> AlgNumOps .
 EmitBoolFunc  -> AlgBoolOps .
 
-BuiltinStrFunc   -> FuncStrSubStr .
-BuiltinAnyFunc   -> FuncAnySelect .
-BuiltinIntFunc   -> FuncStrLength .
-BuiltinFloatFunc -> epsilon .
+BuiltInStrFunc   -> FuncStrSubStr .
+BuiltInAnyFunc   -> FuncAnySelect .
+BuiltInIntFunc   -> FuncStrLength .
+BuiltInFloatFunc -> FuncStrAtof .
 
-AllEmitBoolFunc -> FuncStrContains
+BuiltInBoolFunc -> FuncStrContains
                  | FuncStrRegexp .
 
 AlgBoolOps       -> BoolArg AlgBoolOpsTwoAry
@@ -180,6 +184,7 @@ FuncStrRegexp   -> RegexpKw OpenFuncKw StrArg ArgSepKw Sel CloseFuncKw .
 FuncStrSubStr   -> SubStrKw OpenFuncKw StrArg ArgSepKw IntArg ArgSepKw IntArg CloseFuncKw .
 FuncStrLength   -> LengthKw OpenFuncKw StrArg CloseFuncKw .
 FuncAnySelect   -> SelectKw OpenFuncKw BoolArg CloseFuncKw .
+FuncStrAtof     -> AtofKw OpenFuncKw StrArg CloseFuncKw .
 
 FuncBoolOr      -> OrKw BoolArg .
 FuncBoolAnd     -> AndKw BoolArg .
@@ -195,14 +200,14 @@ Whitespace -> whitespace Whitespace
             | epsilon .
 
 StrArg  -> Str
-         | EmitStrFunc .
+         | BuiltInStrFunc .
 BoolArg -> Bool
-         | AllEmitBoolFunc .
+         | BuiltInBoolFunc .
 NumArg  -> Num
-         | EmitIntFunc
-         | EmitFloatFunc .
+         | BuiltInIntFunc
+         | BuiltInFloatFunc .
 IntArg  -> Int
-         | EmitIntFunc .
+         | BuiltInIntFunc .
 
 Str    -> OpenStrKw SubStr CloseStrKw .
 SubStr -> Letter SubStr
@@ -214,9 +219,7 @@ Digit  -> digit_class .
 
 Bool -> bool .
 
-Num             -> Int SubNum
-                 | SubNum
-                 | InvKv SubNum .
+Num             -> Int SubNum .
 SubNum          -> SubDecimalPart SubExponentPart .
 SubDecimalPart  -> DecimalKw Int
                  | epsilon .
@@ -239,6 +242,7 @@ RegexpKw   -> regexp_class .
 SelectKw   -> select_class .
 LengthKw   -> length_class .
 SubStrKw   -> substring_class .
+AtofKw     -> atof_class .
 
 OpenFuncKw      -> left_parens_class .
 CloseFuncKw     -> right_parens_class .
@@ -332,6 +336,7 @@ regexp_class -> "regexp" .
 select_class -> "select" .
 length_class -> "length" .
 substring_class -> "substring" .
+atof_class -> "atof" .
 
 or_class -> "or" .
 and_class -> "and" .
