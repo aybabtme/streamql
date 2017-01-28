@@ -144,11 +144,11 @@ SubSel        -> ObjSel SubSel
                | ArraySel SubSel
                | Whitespace epsilon .
 ObjSel        -> ThisKw MemberSel .
-MemberSel     -> Str .
+MemberSel     -> InlineStr .
 ArraySel      -> OpenArrayKw ArrayOpSel .
 ArrayOpSel    -> CloseArrayKw
-               | Whitespace Int Whitespace ArrayOpIdx .
-ArrayOpIdx    -> RangeSepKw Whitespace Int Whitespace CloseArrayKw
+               | Whitespace IntArg Whitespace ArrayOpIdx .
+ArrayOpIdx    -> RangeSepKw Whitespace IntArg Whitespace CloseArrayKw
                | CloseArrayKw .
 EmitStrFunc   -> BuiltInStrFunc .
 EmitAnyFunc   -> BuiltInAnyFunc .
@@ -230,6 +230,24 @@ Int             -> SubInt
 SubInt          -> zero_digit_class
                  | non_zero_digit_class SubInt .
 
+
+InlineStr       -> InlineLetter SubInlineStr .
+SubInlineStr    -> InlineLetter SubInlineStr
+                 | Digit SubInlineStr
+                 | epsilon .
+InlineLetter    -> Letter
+                 | escape_letter_class InlineEscapedKw .
+InlineEscapedKw -> FilterSepKw
+                 | PipeSepKw
+                 | ThisKw
+                 | OpenArrayKw
+                 | CloseArrayKw
+                 | RangeSepKw
+                 | OpenFuncKw
+                 | CloseFuncKw
+                 | OpenStrKw
+                 | Whitespace .
+
 FilterSepKw  -> comma_class .
 PipeSepKw    -> pipe_class .
 ThisKw       -> dot_class .
@@ -263,6 +281,7 @@ CloseStrKw      -> quote_class .
 DecimalKw       -> dot_class .
 
 
+
 /* Lexical */
 
 Lexicon -> Whitespace
@@ -294,14 +313,14 @@ Kws -> FilterSepKw
      | CloseStrKw .
 
 
-InlineStr -> InlineLetter SubInlineStr .
+InlineStr    -> InlineLetter SubInlineStr .
 SubInlineStr -> InlineLetter SubInlineStr
-                 | Digit SubInlineStr
-                 | epsilon .
+              | Digit SubInlineStr
+              | epsilon .
 InlineLetter -> Letter
               | escape_letter_class EscapedKw .
-EscapedKw -> Kws
-                | Whitespace .
+EscapedKw    -> Kws
+              | Whitespace .
 Letter -> letter_class .
 Digit -> digit_class .
 Int -> zero_digit_class
