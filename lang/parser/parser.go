@@ -83,7 +83,7 @@ func (p *Parser) scanFiltersStmt(stmt *ast.FiltersStmt) error {
 
 func (p *Parser) scanFilterStmt(stmt *ast.FiltersStmt) error {
 	cur := &ast.FilterStmt{}
-	err := p.scanSelectorsStmt(cur)
+	err := p.scanFuncsStmt(cur)
 	switch err {
 	case parseComplete, nil:
 		if cur != nil {
@@ -118,32 +118,61 @@ func (p *Parser) scanFilterChain(stmt *ast.FiltersStmt) error {
 	return nil
 }
 
-func (p *Parser) scanSelectorsStmt(stmt *ast.FilterStmt) error {
-	if err := p.scanRootSelector(stmt); err != nil {
+func (p *Parser) scanFuncsStmt(stmt *ast.FilterStmt) error {
+	if err := p.scanFuncStmt(stmt); err != nil {
 		return err
 	}
 	if err := p.scanWhitespace(); err != nil {
 		return err
 	}
+	if err := p.scanFuncChainStmt(stmt); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *Parser) scanFuncStmt(stmt *ast.FilterStmt) error {
 	tok, _, err := p.scan()
 	if err != nil {
 		return err
 	}
 	p.unscan()
+
 	switch tok {
-	case token.Comma:
-		return nil
-	case token.Pipe:
-		if err := p.scanSelectorChain(stmt); err != nil {
+	case token.Dot:
+		sel, err := p.scanSelector()
+		if err != nil {
 			return err
 		}
-		return nil
+		stmt.Funcs = append(stmt.Funcs, &ast.FuncStmt{
+			Selector: sel,
+		})
+
+	case token.LeftParens, token.InlineString, token.Float, token.Integer:
+		emitFunc, err := p.scanEmitFunc()
+		if err != nil {
+			return err
+		}
+		stmt.Funcs = append(stmt.Funcs, &ast.FuncStmt{
+			EmitFunc: emitFunc,
+		})
+
 	default:
-		return newSyntaxError(tok, token.Comma, token.Pipe)
+		return newSyntaxError(tok, token.Dot, token.LeftParens, token.InlineString, token.Float, token.Integer)
 	}
+	return nil
 }
 
-func (p *Parser) scanSelectorChain(stmt *ast.FilterStmt) error {
+func (p *Parser) scanFuncChainStmt(stmt *ast.FilterStmt) error {
+	_, _, err := p.scan()
+	switch err {
+	case io.EOF:
+		return parseComplete
+	case nil:
+		p.unscan() // continue
+	default:
+		return err
+	}
 	if err := p.scanPipe(); err != nil {
 		return err
 	}
@@ -151,27 +180,86 @@ func (p *Parser) scanSelectorChain(stmt *ast.FilterStmt) error {
 		return err
 	}
 
-	if err := p.scanSelectorsStmt(stmt); err != nil {
-
+	if err := p.scanFuncsStmt(stmt); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (p *Parser) scanRootSelector(stmt *ast.FilterStmt) error {
-	if err := p.scanDot(); err != nil {
-		return err
+// func
+
+func (p *Parser) scanEmitFunc() (*ast.EmitFuncStmt, error) {
+	tok, lit, err := p.scan()
+	if err != nil {
+		return nil, err
 	}
-	cur, err := p.scanRootObjectSelector()
-	switch err {
-	case nil, parseComplete:
-		if cur != nil {
-			stmt.Selectors = append(stmt.Selectors, cur)
+	p.unscan()
+
+	switch tok {
+	case token.InlineString:
+		// is it a boolean literal?
+		if lit == "true" || lit == "false" {
+			emitBool, err := p.scanEmitBooleanFunc()
+			if err != nil {
+				return nil, err
+			}
+			return &ast.EmitFuncStmt{EmitBooleanFunc: emitBool}, nil
 		}
+		// or a function with a type?
+		switch lit {
+
+		case "contains", "regexp", "not":
+			emitBool, err := p.scanEmitBooleanFunc()
+			if err != nil {
+				return nil, err
+			}
+			return &ast.EmitFuncStmt{EmitBooleanFunc: emitBool}, nil
+
+		case "substring":
+			emitStr, err := p.scanEmitStringFunc()
+			if err != nil {
+				return nil, err
+			}
+			return &ast.EmitFuncStmt{EmitStringFunc: emitStr}, nil
+
+		case "select":
+			emitAny, err := p.scanEmitAnyFunc()
+			if err != nil {
+				return nil, err
+			}
+			return &ast.EmitFuncStmt{EmitAnyFunc: emitAny}, nil
+
+		case "atof", "length":
+			emitNum, err := p.scanEmitNumberFunc()
+			if err != nil {
+				return nil, err
+			}
+			return &ast.EmitFuncStmt{EmitNumberFunc: emitNum}, nil
+
+		default:
+			// FIXME: return a proper error type
+			return nil, fmt.Errorf("unknown keyword %q", lit)
+		}
+	case token.LeftParens, // FIXME: can also be for boolean algebra
+		token.Float, token.Integer:
+		emitNum, err := p.scanEmitNumberFunc()
+		if err != nil {
+			return nil, err
+		}
+		return &ast.EmitFuncStmt{EmitNumberFunc: emitNum}, nil
 	default:
+		return nil, newSyntaxError(tok, token.LeftParens, token.InlineString, token.Float, token.Integer)
 	}
-	return err
 }
+
+func (p *Parser) scanSelector() (*ast.SelectorStmt, error) {
+	if err := p.scanDot(); err != nil {
+		return nil, err
+	}
+	return p.scanRootObjectSelector()
+}
+
+// selectors
 
 func (p *Parser) scanRootObjectSelector() (*ast.SelectorStmt, error) {
 
@@ -195,7 +283,7 @@ func (p *Parser) scanRootObjectSelector() (*ast.SelectorStmt, error) {
 		stmt := &ast.SelectorStmt{Object: object}
 
 		// if there's more, they're child selectors
-		child, err := p.scanSelector()
+		child, err := p.scanSubSelector()
 		switch err {
 		case parseComplete, nil:
 			if child != nil {
@@ -213,7 +301,7 @@ func (p *Parser) scanRootObjectSelector() (*ast.SelectorStmt, error) {
 		}
 		stmt := &ast.SelectorStmt{Array: array}
 
-		child, err := p.scanSelector()
+		child, err := p.scanSubSelector()
 		switch err {
 		case parseComplete, nil:
 			if child != nil {
@@ -245,7 +333,7 @@ func (p *Parser) scanRootObjectSelector() (*ast.SelectorStmt, error) {
 	}
 }
 
-func (p *Parser) scanSelector() (*ast.SelectorStmt, error) {
+func (p *Parser) scanSubSelector() (*ast.SelectorStmt, error) {
 	// figure out what type we're looking at
 	tok, _, err := p.scan()
 	switch err {
@@ -266,7 +354,7 @@ func (p *Parser) scanSelector() (*ast.SelectorStmt, error) {
 		stmt := &ast.SelectorStmt{Object: object}
 
 		// if there's more, they're child selectors
-		child, err := p.scanSelector()
+		child, err := p.scanSubSelector()
 		switch err {
 		case parseComplete, nil:
 			if child != nil {
@@ -284,7 +372,7 @@ func (p *Parser) scanSelector() (*ast.SelectorStmt, error) {
 		}
 		stmt := &ast.SelectorStmt{Array: array}
 
-		child, err := p.scanSelector()
+		child, err := p.scanSubSelector()
 		switch err {
 		case parseComplete, nil:
 			if child != nil {
@@ -353,7 +441,7 @@ func (p *Parser) scanArrayOpSelector() (*ast.ArraySelectorStmt, error) {
 		return nil, err
 	}
 
-	first, err := p.scanInteger()
+	first, err := p.scanIntegerArg()
 	if err != nil {
 		return nil, err
 	}
@@ -366,7 +454,7 @@ func (p *Parser) scanArrayOpSelector() (*ast.ArraySelectorStmt, error) {
 	return stmt, p.scanArrayOpIndexor(stmt, first)
 }
 
-func (p *Parser) scanArrayOpIndexor(stmt *ast.ArraySelectorStmt, first int) error {
+func (p *Parser) scanArrayOpIndexor(stmt *ast.ArraySelectorStmt, first *ast.IntegerArg) error {
 	tok, _, err := p.scan()
 	if err != nil {
 		return err
@@ -379,7 +467,7 @@ func (p *Parser) scanArrayOpIndexor(stmt *ast.ArraySelectorStmt, first int) erro
 		if err := p.scanWhitespace(); err != nil {
 			return err
 		}
-		second, err := p.scanInteger()
+		second, err := p.scanIntegerArg()
 		if err != nil {
 			return err
 		}
@@ -400,6 +488,61 @@ func (p *Parser) scanArrayOpIndexor(stmt *ast.ArraySelectorStmt, first int) erro
 	}
 }
 
+// functions
+
+func (p *Parser) scanEmitStringFunc() (*ast.EmitStringFunc, error)   { panic("not impl") }
+func (p *Parser) scanEmitAnyFunc() (*ast.EmitAnyFunc, error)         { panic("not impl") }
+func (p *Parser) scanEmitNumberFunc() (*ast.EmitNumberFunc, error)   { panic("not impl") }
+func (p *Parser) scanEmitBooleanFunc() (*ast.EmitBooleanFunc, error) { panic("not impl") }
+
+func (p *Parser) scanBuiltInStrFunc() (*ast.EmitStringFunc, error)   { panic("not impl") }
+func (p *Parser) scanBuiltInAnyFunc() (*ast.EmitAnyFunc, error)      { panic("not impl") }
+func (p *Parser) scanBuiltInIntFunc() (*ast.EmitIntFunc, error)      { panic("not impl") }
+func (p *Parser) scanBuiltInFloatFunc() (*ast.EmitFloatFunc, error)  { panic("not impl") }
+func (p *Parser) scanBuiltInBoolFunc() (*ast.EmitBooleanFunc, error) { panic("not impl") }
+
+func (p *Parser) scanAlgBoolOps() (*ast.AlgebraBooleanOps, error)   { panic("not impl") }
+func (p *Parser) scanAlgBoolOpsUnary(*ast.AlgebraBooleanOps) error  { panic("not impl") }
+func (p *Parser) scanAlgBoolOpsTwoAry(*ast.AlgebraBooleanOps) error { panic("not impl") }
+
+func (p *Parser) scanAlgNumberOps() (*ast.AlgebraNumberOps, error)   { panic("not impl") }
+func (p *Parser) scanAlgNumberOpsTwoAry(*ast.AlgebraNumberOps) error { panic("not impl") }
+
+// string functions
+
+func (p *Parser) scanFuncStringContains() (*ast.FuncStringContains, error) { panic("not impl") }
+func (p *Parser) scanFuncStringRegexp() (*ast.FuncStringRegexp, error)     { panic("not impl") }
+func (p *Parser) scanFuncStringSubStr() (*ast.FuncStringSubStr, error)     { panic("not impl") }
+func (p *Parser) scanFuncStringLength() (*ast.FuncStringLength, error)     { panic("not impl") }
+func (p *Parser) scanFuncStringAtof() (*ast.FuncStringAtof, error)         { panic("not impl") }
+
+// any functions
+
+func (p *Parser) scanFuncAnySelect() (*ast.FuncAnySelect, error) { panic("not impl") }
+
+// boolean functions
+
+func (p *Parser) scanFuncBooleanOr() (*ast.FuncBooleanOr, error)   { panic("not impl") }
+func (p *Parser) scanFuncBooleanAnd() (*ast.FuncBooleanAnd, error) { panic("not impl") }
+func (p *Parser) scanFuncBooleanXOR() (*ast.FuncBooleanXOR, error) { panic("not impl") }
+func (p *Parser) scanFuncBooleanNot() (*ast.FuncBooleanNot, error) { panic("not impl") }
+
+// number functions
+
+func (p *Parser) scanFuncNumberAdd() (*ast.FuncNumberAdd, error)           { panic("not impl") }
+func (p *Parser) scanFuncNumberSubtract() (*ast.FuncNumberSubtract, error) { panic("not impl") }
+func (p *Parser) scanFuncNumberMultiply() (*ast.FuncNumberMultiply, error) { panic("not impl") }
+func (p *Parser) scanFuncNumberDivide() (*ast.FuncNumberDivide, error)     { panic("not impl") }
+
+// args
+
+func (p *Parser) scanStringArg() (*ast.StringArg, error)   { panic("not implemented") }
+func (p *Parser) scanBooleanArg() (*ast.BooleanArg, error) { panic("not implemented") }
+func (p *Parser) scanNumberArg() (*ast.NumberArg, error)   { panic("not implemented") }
+func (p *Parser) scanIntegerArg() (*ast.IntegerArg, error) { panic("not implemented") }
+
+// literals and stuff
+
 func (p *Parser) scanInlineString() (string, error) {
 	tok, lit, err := p.scan()
 	if err != nil {
@@ -410,6 +553,41 @@ func (p *Parser) scanInlineString() (string, error) {
 	}
 
 	return scanner.ParseInlineString(lit)
+}
+
+func (p *Parser) scanString() (string, error) {
+	tok, lit, err := p.scan()
+	if err != nil {
+		return "", err
+	}
+	if tok != token.String {
+		return "", newSyntaxError(tok, token.String)
+	}
+
+	return scanner.ParseString(lit)
+}
+
+func (p *Parser) scanBoolean() (bool, error) {
+	tok, lit, err := p.scan()
+	if err != nil {
+		return false, err
+	}
+	if tok != token.InlineString {
+		return false, newSyntaxError(tok, token.InlineString)
+	}
+
+	return scanner.ParseBoolean(lit)
+}
+
+func (p *Parser) scanNumber() (float64, error) {
+	tok, lit, err := p.scan()
+	if err != nil {
+		return 0, err
+	}
+	if tok != token.Float && tok != token.Integer {
+		return 0, newSyntaxError(tok, token.Float, token.Integer)
+	}
+	return scanner.ParseNumber(lit)
 }
 
 func (p *Parser) scanInteger() (int, error) {

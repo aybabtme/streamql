@@ -5,7 +5,21 @@ type FiltersStmt struct {
 }
 
 type FilterStmt struct {
-	Selectors []*SelectorStmt `json:"selectors"`
+	Funcs []*FuncStmt `json:"funcs"`
+}
+
+type FuncStmt struct {
+	// oneof
+	EmitFunc *EmitFuncStmt `json:"emit_func,omitempty"`
+	Selector *SelectorStmt `json:"selector,omitempty"`
+}
+
+type EmitFuncStmt struct {
+	// oneof
+	EmitBooleanFunc *EmitBooleanFunc `json:"emit_boolean_func,omitempty"`
+	EmitStringFunc  *EmitStringFunc  `json:"emit_string_func,omitempty"`
+	EmitNumberFunc  *EmitNumberFunc  `json:"emit_number_func,omitempty"`
+	EmitAnyFunc     *EmitAnyFunc     `json:"emit_any_func,omitempty"`
 }
 
 type SelectorStmt struct {
@@ -33,10 +47,140 @@ type ArraySelectorStmt struct {
 type (
 	EachSelectorStmt      struct{}
 	RangeEachSelectorStmt struct {
-		From int `json:"from,omitempty"`
-		To   int `json:"to,omitempty"`
+		From *IntegerArg `json:"from,omitempty"`
+		To   *IntegerArg `json:"to,omitempty"`
 	}
 	IndexSelectorStmt struct {
-		Index int `json:"index,omitempty"`
+		Index *IntegerArg `json:"index,omitempty"`
 	}
 )
+
+type EmitBooleanFunc struct {
+	// oneof
+	StringContains *FuncStringContains `json:"string_contains,omitempty"`
+	StringRegexp   *FuncStringRegexp   `json:"string_regexp,omitempty"`
+	Algebra        *AlgebraBooleanOps  `json:"algebra,omitempty"`
+}
+type EmitStringFunc struct {
+	// oneof
+	StringSubStr *FuncStringSubStr `json:"string_substr,omitempty"`
+}
+type EmitNumberFunc struct {
+	// oneof
+	Int     *EmitIntFunc      `json:"int,omitempty"`
+	Float   *EmitFloatFunc    `json:"float,omitempty"`
+	Algebra *AlgebraNumberOps `json:"algebra,omitempty"`
+}
+type EmitAnyFunc struct {
+	// oneof
+	AnySelect *FuncAnySelect `json:"select,omitempty"`
+}
+
+type EmitIntFunc struct {
+	// oneof
+	StringLength *FuncStringLength `json:"string_length,omitempty"`
+}
+type EmitFloatFunc struct {
+	// oneof
+	StringAtof *FuncStringAtof `json:"string_atof,omitempty"`
+}
+
+type AlgebraBooleanOps struct {
+	// oneof
+	Or  *FuncBooleanOr  `json:"or,omitempty"`
+	And *FuncBooleanAnd `json:"and,omitempty"`
+	Not *FuncBooleanNot `json:"not,omitempty"`
+	XOR *FuncBooleanXOR `json:"xor,omitempty"`
+}
+
+type AlgebraNumberOps struct {
+	// oneof
+	Add      *FuncNumberAdd      `json:"add,omitempty"`
+	Subtract *FuncNumberSubtract `json:"subtract,omitempty"`
+	Multiply *FuncNumberMultiply `json:"multiply,omitempty"`
+	Divide   *FuncNumberDivide   `json:"divide,omitempty"`
+}
+
+type StringArg struct {
+	// oneof
+	String         *string         `json:"string,omitempty"`
+	EmitStringFunc *EmitStringFunc `json:"emit_string_func,omitempty"`
+	Selector       *SelectorStmt   `json:"selector,omitempty"`
+}
+
+type BooleanArg struct {
+	// oneof
+	Boolean         *bool            `json:"boolean,omitempty"`
+	EmitBooleanFunc *EmitBooleanFunc `json:"emit_boolean_func,omitempty"`
+	Selector        *SelectorStmt    `json:"selector,omitempty"`
+}
+
+type NumberArg struct {
+	// oneof
+	Number         *float64        `json:"number,omitempty"`
+	EmitNumberFunc *EmitNumberFunc `json:"emit_number_func,omitempty"`
+	Selector       *SelectorStmt   `json:"selector,omitempty"`
+}
+
+type IntegerArg struct {
+	// oneof
+	Integer     *int          `json:"integer,omitempty"`
+	EmitIntFunc *EmitIntFunc  `json:"emit_int_func,omitempty"`
+	Selector    *SelectorStmt `json:"selector,omitempty"`
+}
+
+type FuncStringContains struct {
+	SubString *StringArg    `json:"substring"`
+	Selector  *SelectorStmt `json:"selector"`
+}
+type FuncStringRegexp struct {
+	Expression *StringArg    `json:"expression"`
+	Selector   *SelectorStmt `json:"selector"`
+}
+type FuncStringSubStr struct {
+	String *StringArg  `json:"string"`
+	From   *IntegerArg `json:"from"`
+	To     *IntegerArg `json:"to"`
+}
+type FuncStringLength struct {
+	String *StringArg `json:"string"`
+}
+type FuncStringAtof struct {
+	String *StringArg `json:"string"`
+}
+type FuncAnySelect struct {
+	Condition *BooleanArg `json:"condition"`
+}
+
+type FuncBooleanOr struct {
+	LHS *BooleanArg `json:"lhs"`
+	RHS *BooleanArg `json:"rhs"`
+}
+type FuncBooleanAnd struct {
+	LHS *BooleanArg `json:"lhs"`
+	RHS *BooleanArg `json:"rhs"`
+}
+type FuncBooleanNot struct {
+	Boolean *BooleanArg `json:"boolean"`
+}
+type FuncBooleanXOR struct {
+	LHS *BooleanArg `json:"lhs"`
+	RHS *BooleanArg `json:"rhs"`
+}
+
+type FuncNumberAdd struct {
+	LHS *NumberArg `json:"lhs"`
+	RHS *NumberArg `json:"rhs"`
+}
+type FuncNumberSubtract struct {
+	LHS *NumberArg `json:"lhs"`
+	RHS *NumberArg `json:"rhs"`
+}
+type FuncNumberMultiply struct {
+	LHS *NumberArg `json:"lhs"`
+	RHS *NumberArg `json:"rhs"`
+}
+type FuncNumberDivide struct {
+	LHS *NumberArg `json:"lhs"`
+	RHS *NumberArg `json:"rhs"`
+}
