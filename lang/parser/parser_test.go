@@ -21,8 +21,8 @@ func TestPositiveParse(t *testing.T) {
 			input: ".",
 			want: &ast.FiltersStmt{
 				Filters: []*ast.FilterStmt{
-					{Selectors: []*ast.SelectorStmt{
-						{},
+					{Funcs: []*ast.FuncStmt{
+						{Selector: &ast.SelectorStmt{}},
 					}},
 				},
 			},
@@ -31,11 +31,11 @@ func TestPositiveParse(t *testing.T) {
 			input: ".,.",
 			want: &ast.FiltersStmt{
 				Filters: []*ast.FilterStmt{
-					{Selectors: []*ast.SelectorStmt{
-						{},
+					{Funcs: []*ast.FuncStmt{
+						{Selector: &ast.SelectorStmt{}},
 					}},
-					{Selectors: []*ast.SelectorStmt{
-						{},
+					{Funcs: []*ast.FuncStmt{
+						{Selector: &ast.SelectorStmt{}},
 					}},
 				},
 			},
@@ -44,9 +44,9 @@ func TestPositiveParse(t *testing.T) {
 			input: ".|.",
 			want: &ast.FiltersStmt{
 				Filters: []*ast.FilterStmt{
-					{Selectors: []*ast.SelectorStmt{
-						{},
-						{},
+					{Funcs: []*ast.FuncStmt{
+						{Selector: &ast.SelectorStmt{}},
+						{Selector: &ast.SelectorStmt{}},
 					}},
 				},
 			},
@@ -55,9 +55,11 @@ func TestPositiveParse(t *testing.T) {
 			input: ".hello",
 			want: &ast.FiltersStmt{
 				Filters: []*ast.FilterStmt{
-					{Selectors: []*ast.SelectorStmt{
-						{Object: &ast.ObjectSelectorStmt{
-							Member: "hello",
+					{Funcs: []*ast.FuncStmt{
+						{Selector: &ast.SelectorStmt{
+							Object: &ast.ObjectSelectorStmt{
+								Member: "hello",
+							},
 						}},
 					}},
 				},
@@ -67,16 +69,22 @@ func TestPositiveParse(t *testing.T) {
 			input: `.[].id`,
 			want: &ast.FiltersStmt{
 				Filters: []*ast.FilterStmt{
-					{Selectors: []*ast.SelectorStmt{
-						{Array: &ast.ArraySelectorStmt{
-							Each: &ast.EachSelectorStmt{},
-							Child: &ast.SelectorStmt{
-								Object: &ast.ObjectSelectorStmt{
-									Member: "id",
+					{
+						Funcs: []*ast.FuncStmt{
+							{
+								Selector: &ast.SelectorStmt{
+									Array: &ast.ArraySelectorStmt{
+										Each: &ast.EachSelectorStmt{},
+										Child: &ast.SelectorStmt{
+											Object: &ast.ObjectSelectorStmt{
+												Member: "id",
+											},
+										},
+									},
 								},
 							},
-						}},
-					}},
+						},
+					},
 				},
 			},
 		},
@@ -84,12 +92,16 @@ func TestPositiveParse(t *testing.T) {
 			input: ".hello | .bye",
 			want: &ast.FiltersStmt{
 				Filters: []*ast.FilterStmt{
-					{Selectors: []*ast.SelectorStmt{
-						{Object: &ast.ObjectSelectorStmt{
-							Member: "hello",
+					{Funcs: []*ast.FuncStmt{
+						{Selector: &ast.SelectorStmt{
+							Object: &ast.ObjectSelectorStmt{
+								Member: "hello",
+							},
 						}},
-						{Object: &ast.ObjectSelectorStmt{
-							Member: "bye",
+						{Selector: &ast.SelectorStmt{
+							Object: &ast.ObjectSelectorStmt{
+								Member: "bye",
+							},
 						}},
 					}},
 				},
@@ -99,14 +111,18 @@ func TestPositiveParse(t *testing.T) {
 			input: ".hello , .bye",
 			want: &ast.FiltersStmt{
 				Filters: []*ast.FilterStmt{
-					{Selectors: []*ast.SelectorStmt{
-						{Object: &ast.ObjectSelectorStmt{
-							Member: "hello",
+					{Funcs: []*ast.FuncStmt{
+						{Selector: &ast.SelectorStmt{
+							Object: &ast.ObjectSelectorStmt{
+								Member: "hello",
+							},
 						}},
 					}},
-					{Selectors: []*ast.SelectorStmt{
-						{Object: &ast.ObjectSelectorStmt{
-							Member: "bye",
+					{Funcs: []*ast.FuncStmt{
+						{Selector: &ast.SelectorStmt{
+							Object: &ast.ObjectSelectorStmt{
+								Member: "bye",
+							},
 						}},
 					}},
 				},
@@ -116,9 +132,11 @@ func TestPositiveParse(t *testing.T) {
 			input: ".hello    ",
 			want: &ast.FiltersStmt{
 				Filters: []*ast.FilterStmt{
-					{Selectors: []*ast.SelectorStmt{
-						{Object: &ast.ObjectSelectorStmt{
-							Member: "hello",
+					{Funcs: []*ast.FuncStmt{
+						{Selector: &ast.SelectorStmt{
+							Object: &ast.ObjectSelectorStmt{
+								Member: "hello",
+							},
 						}},
 					}},
 				},
@@ -128,9 +146,11 @@ func TestPositiveParse(t *testing.T) {
 			input: `.hello\ \ \ \ `,
 			want: &ast.FiltersStmt{
 				Filters: []*ast.FilterStmt{
-					{Selectors: []*ast.SelectorStmt{
-						{Object: &ast.ObjectSelectorStmt{
-							Member: "hello    ",
+					{Funcs: []*ast.FuncStmt{
+						{Selector: &ast.SelectorStmt{
+							Object: &ast.ObjectSelectorStmt{
+								Member: "hello    ",
+							},
 						}},
 					}},
 				},
@@ -140,9 +160,11 @@ func TestPositiveParse(t *testing.T) {
 			input: ".[]",
 			want: &ast.FiltersStmt{
 				Filters: []*ast.FilterStmt{
-					{Selectors: []*ast.SelectorStmt{
-						{Array: &ast.ArraySelectorStmt{
-							Each: &ast.EachSelectorStmt{},
+					{Funcs: []*ast.FuncStmt{
+						{Selector: &ast.SelectorStmt{
+							Array: &ast.ArraySelectorStmt{
+								Each: &ast.EachSelectorStmt{},
+							},
 						}},
 					}},
 				},
@@ -152,12 +174,14 @@ func TestPositiveParse(t *testing.T) {
 			input: ".hello[]",
 			want: &ast.FiltersStmt{
 				Filters: []*ast.FilterStmt{
-					{Selectors: []*ast.SelectorStmt{
-						{Object: &ast.ObjectSelectorStmt{
-							Member: "hello",
-							Child: &ast.SelectorStmt{
-								Array: &ast.ArraySelectorStmt{
-									Each: &ast.EachSelectorStmt{},
+					{Funcs: []*ast.FuncStmt{
+						{Selector: &ast.SelectorStmt{
+							Object: &ast.ObjectSelectorStmt{
+								Member: "hello",
+								Child: &ast.SelectorStmt{
+									Array: &ast.ArraySelectorStmt{
+										Each: &ast.EachSelectorStmt{},
+									},
 								},
 							},
 						}},
@@ -169,13 +193,15 @@ func TestPositiveParse(t *testing.T) {
 			input: ".hello[1]",
 			want: &ast.FiltersStmt{
 				Filters: []*ast.FilterStmt{
-					{Selectors: []*ast.SelectorStmt{
-						{Object: &ast.ObjectSelectorStmt{
-							Member: "hello",
-							Child: &ast.SelectorStmt{
-								Array: &ast.ArraySelectorStmt{
-									Index: &ast.IndexSelectorStmt{
-										Index: 1,
+					{Funcs: []*ast.FuncStmt{
+						{Selector: &ast.SelectorStmt{
+							Object: &ast.ObjectSelectorStmt{
+								Member: "hello",
+								Child: &ast.SelectorStmt{
+									Array: &ast.ArraySelectorStmt{
+										Index: &ast.IndexSelectorStmt{
+											Index: &ast.IntegerArg{Integer: intp(1)},
+										},
 									},
 								},
 							},
@@ -188,13 +214,16 @@ func TestPositiveParse(t *testing.T) {
 			input: ".hello[1:2]",
 			want: &ast.FiltersStmt{
 				Filters: []*ast.FilterStmt{
-					{Selectors: []*ast.SelectorStmt{
-						{Object: &ast.ObjectSelectorStmt{
-							Member: "hello",
-							Child: &ast.SelectorStmt{
-								Array: &ast.ArraySelectorStmt{
-									RangeEach: &ast.RangeEachSelectorStmt{
-										From: 1, To: 2,
+					{Funcs: []*ast.FuncStmt{
+						{Selector: &ast.SelectorStmt{
+							Object: &ast.ObjectSelectorStmt{
+								Member: "hello",
+								Child: &ast.SelectorStmt{
+									Array: &ast.ArraySelectorStmt{
+										RangeEach: &ast.RangeEachSelectorStmt{
+											From: &ast.IntegerArg{Integer: intp(1)},
+											To:   &ast.IntegerArg{Integer: intp(2)},
+										},
 									},
 								},
 							},
@@ -207,25 +236,28 @@ func TestPositiveParse(t *testing.T) {
 			input: ".hello[1:2][42][].world",
 			want: &ast.FiltersStmt{
 				Filters: []*ast.FilterStmt{
-					{Selectors: []*ast.SelectorStmt{
-						{Object: &ast.ObjectSelectorStmt{
-							Member: "hello",
-							Child: &ast.SelectorStmt{
-								Array: &ast.ArraySelectorStmt{
-									RangeEach: &ast.RangeEachSelectorStmt{
-										From: 1, To: 2,
-									},
-									Child: &ast.SelectorStmt{
-										Array: &ast.ArraySelectorStmt{
-											Index: &ast.IndexSelectorStmt{
-												Index: 42,
-											},
-											Child: &ast.SelectorStmt{
-												Array: &ast.ArraySelectorStmt{
-													Each: &ast.EachSelectorStmt{},
-													Child: &ast.SelectorStmt{
-														Object: &ast.ObjectSelectorStmt{
-															Member: "world",
+					{Funcs: []*ast.FuncStmt{
+						{Selector: &ast.SelectorStmt{
+							Object: &ast.ObjectSelectorStmt{
+								Member: "hello",
+								Child: &ast.SelectorStmt{
+									Array: &ast.ArraySelectorStmt{
+										RangeEach: &ast.RangeEachSelectorStmt{
+											From: &ast.IntegerArg{Integer: intp(1)},
+											To:   &ast.IntegerArg{Integer: intp(2)},
+										},
+										Child: &ast.SelectorStmt{
+											Array: &ast.ArraySelectorStmt{
+												Index: &ast.IndexSelectorStmt{
+													Index: &ast.IntegerArg{Integer: intp(42)},
+												},
+												Child: &ast.SelectorStmt{
+													Array: &ast.ArraySelectorStmt{
+														Each: &ast.EachSelectorStmt{},
+														Child: &ast.SelectorStmt{
+															Object: &ast.ObjectSelectorStmt{
+																Member: "world",
+															},
 														},
 													},
 												},
@@ -244,33 +276,34 @@ func TestPositiveParse(t *testing.T) {
 			input: `.[].id1 | .[].id2, .[].id3`,
 			want: &ast.FiltersStmt{
 				Filters: []*ast.FilterStmt{
-					{Selectors: []*ast.SelectorStmt{
-						// first
-						{Array: &ast.ArraySelectorStmt{
-							Each: &ast.EachSelectorStmt{},
-							Child: &ast.SelectorStmt{
-								Object: &ast.ObjectSelectorStmt{
-									Member: "id1",
+					{Funcs: []*ast.FuncStmt{
+						{Selector: &ast.SelectorStmt{
+							Array: &ast.ArraySelectorStmt{
+								Each: &ast.EachSelectorStmt{},
+								Child: &ast.SelectorStmt{
+									Object: &ast.ObjectSelectorStmt{
+										Member: "id1",
+									},
 								},
 							},
 						}},
-						// | second
-						{Array: &ast.ArraySelectorStmt{
-							Each: &ast.EachSelectorStmt{},
-							Child: &ast.SelectorStmt{
-								Object: &ast.ObjectSelectorStmt{
-									Member: "id2",
+						{Selector: &ast.SelectorStmt{
+							Array: &ast.ArraySelectorStmt{
+								Each: &ast.EachSelectorStmt{},
+								Child: &ast.SelectorStmt{
+									Object: &ast.ObjectSelectorStmt{
+										Member: "id2",
+									},
 								},
 							},
 						}},
-					}},
-					// , other filter
-					{Selectors: []*ast.SelectorStmt{
-						{Array: &ast.ArraySelectorStmt{
-							Each: &ast.EachSelectorStmt{},
-							Child: &ast.SelectorStmt{
-								Object: &ast.ObjectSelectorStmt{
-									Member: "id3",
+						{Selector: &ast.SelectorStmt{
+							Array: &ast.ArraySelectorStmt{
+								Each: &ast.EachSelectorStmt{},
+								Child: &ast.SelectorStmt{
+									Object: &ast.ObjectSelectorStmt{
+										Member: "id3",
+									},
 								},
 							},
 						}},
@@ -371,8 +404,13 @@ func TestNegativeParse(t *testing.T) {
 		if !reflect.DeepEqual(tt.want, got) {
 			t.Errorf("want=%v", tt.want)
 			t.Errorf(" got=%v", got)
-			t.Errorf("want=%#v", tt.want)
-			t.Errorf(" got=%#v", got)
+			// t.Errorf("want=%#v", tt.want)
+			// t.Errorf(" got=%#v", got)
 		}
 	}
 }
+
+func intp(v int) *int             { return &v }
+func stringp(v string) *string    { return &v }
+func boolp(v bool) *bool          { return &v }
+func float64p(v float64) *float64 { return &v }

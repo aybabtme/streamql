@@ -25,4 +25,8 @@ const (
 	RightParens
 	Quote
 	Colon
+	PlusSymbol
+	MinusSymbol
+	MultiplySymbol
+	DivideSymbol
 )

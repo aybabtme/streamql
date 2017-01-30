@@ -44,7 +44,11 @@ func (s *Scanner) Scan() (tok token.Token, lit string, err error) {
 		isRightParens(ch),
 		isLeftParens(ch),
 		isQuote(ch),
-		isColon(ch):
+		isColon(ch),
+		isPlusSymbol(ch),
+		isMinusSymbol(ch), // TODO: fix the negative numbers/subtract conflict
+		isMultiplySymbol(ch),
+		isDivideSymbol(ch):
 
 		rule = s.scanKeyword
 
@@ -344,6 +348,14 @@ func (s *Scanner) scanKeyword() (token.Token, string, error) {
 		return token.Quote, string(ch), nil
 	case isColon(ch):
 		return token.Colon, string(ch), nil
+	case isPlusSymbol(ch):
+		return token.PlusSymbol, string(ch), nil
+	case isMinusSymbol(ch):
+		return token.MinusSymbol, string(ch), nil
+	case isMultiplySymbol(ch):
+		return token.MultiplySymbol, string(ch), nil
+	case isDivideSymbol(ch):
+		return token.DivideSymbol, string(ch), nil
 	default:
 		return s.eosIfEOF(token.Illegal, "", err)
 	}
@@ -355,6 +367,10 @@ func isStringCharacter(ch rune) bool    { return isSpace(ch) || isLetter(ch) || 
 func isWhitespace(ch rune) bool         { return isSpace(ch) || isControlChar(ch) }
 func isSpace(ch rune) bool              { return ch == ' ' }
 func isNegativeSign(ch rune) bool       { return ch == '-' }
+func isPlusSymbol(ch rune) bool         { return ch == '+' }
+func isMinusSymbol(ch rune) bool        { return ch == '-' }
+func isMultiplySymbol(ch rune) bool     { return ch == '*' }
+func isDivideSymbol(ch rune) bool       { return ch == '/' }
 func isZeroDigit(ch rune) bool          { return ch == '0' }
 func isNonZeroDigit(ch rune) bool       { return ch > '0' && ch <= '9' }
 func isScientificExponent(ch rune) bool { return ch == 'e' }

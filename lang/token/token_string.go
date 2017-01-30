@@ -4,9 +4,9 @@ package token
 
 import "fmt"
 
-const _Token_name = "IllegalEOSWhitespaceInlineStringStringIntegerFloatCommaPipeDotLeftBracketRightBracketLeftParensRightParensQuoteColon"
+const _Token_name = "IllegalEOSWhitespaceInlineStringStringIntegerFloatCommaPipeDotLeftBracketRightBracketLeftParensRightParensQuoteColonPlusSymbolMinusSymbolMultiplySymbolDivideSymbol"
 
-var _Token_index = [...]uint8{0, 7, 10, 20, 32, 38, 45, 50, 55, 59, 62, 73, 85, 95, 106, 111, 116}
+var _Token_index = [...]uint8{0, 7, 10, 20, 32, 38, 45, 50, 55, 59, 62, 73, 85, 95, 106, 111, 116, 126, 137, 151, 163}
 
 func (i Token) String() string {
 	if i < 0 || i >= Token(len(_Token_index)-1) {
