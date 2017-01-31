@@ -120,15 +120,28 @@ func (p *Parser) scanFilterChain(stmt *ast.FiltersStmt) error {
 
 func (p *Parser) scanFuncsStmt(stmt *ast.FilterStmt) error {
 	if err := p.scanFuncStmt(stmt); err != nil {
+
 		return err
 	}
 	if err := p.scanWhitespace(); err != nil {
 		return err
 	}
-	if err := p.scanFuncChainStmt(stmt); err != nil {
+	tok, _, err := p.scan()
+	if err != nil {
 		return err
 	}
-	return nil
+	p.unscan()
+	switch tok {
+	case token.Comma:
+		return nil
+	case token.Pipe:
+		if err := p.scanFuncChainStmt(stmt); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return newSyntaxError(tok, token.Comma, token.Pipe)
+	}
 }
 
 func (p *Parser) scanFuncStmt(stmt *ast.FilterStmt) error {
@@ -141,12 +154,15 @@ func (p *Parser) scanFuncStmt(stmt *ast.FilterStmt) error {
 	switch tok {
 	case token.Dot:
 		sel, err := p.scanSelector()
-		if err != nil {
+		switch err {
+		case parseComplete, nil:
+			stmt.Funcs = append(stmt.Funcs, &ast.FuncStmt{
+				Selector: sel,
+			})
+			return err
+		default:
 			return err
 		}
-		stmt.Funcs = append(stmt.Funcs, &ast.FuncStmt{
-			Selector: sel,
-		})
 
 	case token.LeftParens, token.InlineString, token.Float, token.Integer:
 		emitFunc, err := p.scanEmitFunc()
@@ -1285,17 +1301,39 @@ func (p *Parser) scanWhitespace() error {
 	}
 }
 
-func (p *Parser) scanComma() error          { return p.scanToken(token.Comma) }
-func (p *Parser) scanPipe() error           { return p.scanToken(token.Pipe) }
-func (p *Parser) scanDot() error            { return p.scanToken(token.Dot) }
-func (p *Parser) scanLeftBracket() error    { return p.scanToken(token.LeftBracket) }
-func (p *Parser) scanRightBracket() error   { return p.scanToken(token.RightBracket) }
-func (p *Parser) scanLeftParens() error     { return p.scanToken(token.LeftParens) }
-func (p *Parser) scanRightParens() error    { return p.scanToken(token.RightParens) }
-func (p *Parser) scanPlusSymbol() error     { return p.scanToken(token.PlusSymbol) }
-func (p *Parser) scanMinusSymbol() error    { return p.scanToken(token.MinusSymbol) }
-func (p *Parser) scanMultiplySymbol() error { return p.scanToken(token.MultiplySymbol) }
-func (p *Parser) scanDivideSymbol() error   { return p.scanToken(token.DivideSymbol) }
+func (p *Parser) scanComma() error {
+	return p.scanToken(token.Comma)
+}
+func (p *Parser) scanPipe() error {
+	return p.scanToken(token.Pipe)
+}
+func (p *Parser) scanDot() error {
+	return p.scanToken(token.Dot)
+}
+func (p *Parser) scanLeftBracket() error {
+	return p.scanToken(token.LeftBracket)
+}
+func (p *Parser) scanRightBracket() error {
+	return p.scanToken(token.RightBracket)
+}
+func (p *Parser) scanLeftParens() error {
+	return p.scanToken(token.LeftParens)
+}
+func (p *Parser) scanRightParens() error {
+	return p.scanToken(token.RightParens)
+}
+func (p *Parser) scanPlusSymbol() error {
+	return p.scanToken(token.PlusSymbol)
+}
+func (p *Parser) scanMinusSymbol() error {
+	return p.scanToken(token.MinusSymbol)
+}
+func (p *Parser) scanMultiplySymbol() error {
+	return p.scanToken(token.MultiplySymbol)
+}
+func (p *Parser) scanDivideSymbol() error {
+	return p.scanToken(token.DivideSymbol)
+}
 
 func (p *Parser) scanToken(want token.Token) error {
 	got, _, err := p.scan()
@@ -1326,4 +1364,6 @@ func (p *Parser) scan() (token.Token, string, error) {
 	return tok, lit, err
 }
 
-func (p *Parser) unscan() { p.buf.used = true }
+func (p *Parser) unscan() {
+	p.buf.used = true
+}
