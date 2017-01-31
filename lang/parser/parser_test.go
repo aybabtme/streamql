@@ -2,6 +2,7 @@ package parser
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"reflect"
 	"strings"
@@ -348,10 +349,10 @@ func TestNegativeParse(t *testing.T) {
 		input string
 		want  error
 	}{
-		// {
-		// 	input: "",
-		// 	want:  io.ErrUnexpectedEOF,
-		// },
+		{
+			input: "",
+			want:  io.ErrUnexpectedEOF,
+		},
 		{
 			input: ".]",
 			want: &SyntaxError{
@@ -359,42 +360,39 @@ func TestNegativeParse(t *testing.T) {
 				Actual:   token.RightBracket,
 			},
 		},
-		// {
-		// 	input: "hello",
-		// 	want: &SyntaxError{
-		// 		Expected: []token.Token{token.Dot},
-		// 		Actual:   token.InlineString,
-		// 	},
-		// },
-		// {
-		// 	input: ".[1:2 | ]",
-		// 	want: &SyntaxError{
-		// 		Expected: []token.Token{token.RightBracket},
-		// 		Actual:   token.Pipe,
-		// 	},
-		// },
-		// {
-		// 	input: ". hello",
-		// 	want: &SyntaxError{
-		// 		Expected: []token.Token{token.Comma, token.Pipe},
-		// 		Actual:   token.InlineString,
-		// 	},
-		// },
-		// {
-		// 	input: ".|.|.|.|",
-		// 	want:  io.ErrUnexpectedEOF,
-		// },
-		// {
-		// 	input: ".,.,.,.,",
-		// 	want:  io.ErrUnexpectedEOF,
-		// },
-		// {
-		// 	input: ",",
-		// 	want: &SyntaxError{
-		// 		Expected: []token.Token{token.Dot},
-		// 		Actual:   token.Comma,
-		// 	},
-		// },
+		{
+			input: "hello",
+			want:  newUnknownKeywordError("hello", containsKeyword, regexpKeyword, notKeyword, substringKeyword, selectKeyword, atofKeyword, lengthKeyword),
+		},
+		{
+			input: ".[1:2 | ]",
+			want: &SyntaxError{
+				Expected: []token.Token{token.RightBracket},
+				Actual:   token.Pipe,
+			},
+		},
+		{
+			input: ". hello",
+			want: &SyntaxError{
+				Expected: []token.Token{token.Comma, token.Pipe},
+				Actual:   token.InlineString,
+			},
+		},
+		{
+			input: ".|.|.|.|",
+			want:  io.ErrUnexpectedEOF,
+		},
+		{
+			input: ".,.,.,.,",
+			want:  io.ErrUnexpectedEOF,
+		},
+		{
+			input: ",",
+			want: &SyntaxError{
+				Expected: []token.Token{token.Dot, token.LeftParens, token.InlineString, token.Float, token.Integer},
+				Actual:   token.Comma,
+			},
+		},
 	}
 
 	for n, tt := range tests {

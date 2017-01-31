@@ -36,6 +36,30 @@ func (e *SyntaxError) Error() string {
 	return fmt.Sprintf("expected %s, got %s", expect, e.Actual.String())
 }
 
+func newUnknownKeywordError(got string, want ...string) error {
+	return &UnknownKeywordError{Expected: want, Actual: got}
+}
+
+type UnknownKeywordError struct {
+	Expected []string
+	Actual   string
+}
+
+func (e *UnknownKeywordError) Error() string {
+	var expect string
+	for i, exp := range e.Expected {
+		switch i {
+		case 0:
+			expect = fmt.Sprintf("%q", exp)
+		case len(e.Expected) - 1:
+			expect += " or " + fmt.Sprintf("%q", exp)
+		default:
+			expect += ", " + fmt.Sprintf("%q", exp)
+		}
+	}
+	return fmt.Sprintf("expected %s, got %q", expect, e.Actual)
+}
+
 // Parser represents a parser.
 type Parser struct {
 	s   *scanner.Scanner
@@ -252,8 +276,9 @@ func (p *Parser) scanEmitFunc() (*ast.EmitFuncStmt, error) {
 			return &ast.EmitFuncStmt{EmitNumberFunc: emitNum}, nil
 
 		default:
-			// FIXME: return a proper error type
-			return nil, fmt.Errorf("unknown keyword %q", lit)
+			return nil, newUnknownKeywordError(lit,
+				containsKeyword, regexpKeyword, notKeyword, substringKeyword, selectKeyword, atofKeyword, lengthKeyword,
+			)
 		}
 	case token.LeftParens, // FIXME: can also be for boolean algebra
 		token.Float, token.Integer:
@@ -506,21 +531,21 @@ func (p *Parser) scanArrayOpIndexor(stmt *ast.ArraySelectorStmt, first *ast.Inte
 // functions
 
 const (
-	trueKeyword  = `"true"`
-	falseKeyword = `"false"`
+	trueKeyword  = `true`
+	falseKeyword = `false`
 
-	notKeyword = `"not"`
-	andKeyword = `"and"`
-	orKeyword  = `"or"`
-	xorKeyword = `"xor"`
+	notKeyword = `not`
+	andKeyword = `and`
+	orKeyword  = `or`
+	xorKeyword = `xor`
 
-	substringKeyword = `"substring"`
-	containsKeyword  = `"contains"`
-	regexpKeyword    = `"regexp"`
+	substringKeyword = `substring`
+	containsKeyword  = `contains`
+	regexpKeyword    = `regexp`
 
-	selectKeyword = `"select"`
-	atofKeyword   = `"atof"`
-	lengthKeyword = `"length"`
+	selectKeyword = `select`
+	atofKeyword   = `atof`
+	lengthKeyword = `length`
 )
 
 func (p *Parser) scanEmitStringFunc() (*ast.EmitStringFunc, error) {
@@ -536,7 +561,7 @@ func (p *Parser) scanEmitStringFunc() (*ast.EmitStringFunc, error) {
 	case substringKeyword:
 		return p.scanBuiltInStrFunc()
 	default:
-		return nil, fmt.Errorf("unknown identifier with name %q", lit)
+		return nil, newUnknownKeywordError(lit, substringKeyword)
 	}
 }
 
@@ -553,7 +578,7 @@ func (p *Parser) scanEmitAnyFunc() (*ast.EmitAnyFunc, error) {
 	case selectKeyword:
 		return p.scanEmitAnyFunc()
 	default:
-		return nil, fmt.Errorf("unknown identifier with name %q", lit)
+		return nil, newUnknownKeywordError(lit, selectKeyword)
 	}
 }
 
@@ -571,7 +596,7 @@ func (p *Parser) scanEmitNumberFunc() (*ast.EmitNumberFunc, error) {
 		switch lit {
 		case atofKeyword:
 		default:
-			return nil, fmt.Errorf("unknown identifier with name %q", lit)
+			return nil, newUnknownKeywordError(lit, atofKeyword)
 		}
 
 	case token.LeftParens, token.Integer, token.Float: // continue
@@ -599,7 +624,7 @@ func (p *Parser) scanEmitBooleanFunc() (*ast.EmitBooleanFunc, error) {
 		case notKeyword:
 		case regexpKeyword, containsKeyword:
 		default:
-			return nil, fmt.Errorf("unknown identifier with name %q", lit)
+			return nil, newUnknownKeywordError(lit, trueKeyword, falseKeyword, notKeyword, regexpKeyword, containsKeyword, atofKeyword)
 		}
 
 	default:
@@ -626,7 +651,7 @@ func (p *Parser) scanBuiltInStrFunc() (*ast.EmitStringFunc, error) {
 			rule = p.scanFuncStringSubStr
 
 		default:
-			return nil, fmt.Errorf("unknown identifier with name %q", lit)
+			return nil, newUnknownKeywordError(lit, substringKeyword)
 		}
 
 	default:
@@ -652,7 +677,7 @@ func (p *Parser) scanBuiltInAnyFunc() (*ast.EmitAnyFunc, error) {
 			rule = p.scanFuncAnySelect
 
 		default:
-			return nil, fmt.Errorf("unknown identifier with name %q", lit)
+			return nil, newUnknownKeywordError(lit, selectKeyword)
 		}
 
 	default:
@@ -678,7 +703,7 @@ func (p *Parser) scanBuiltInIntFunc() (*ast.EmitIntFunc, error) {
 			rule = p.scanFuncStringLength
 
 		default:
-			return nil, fmt.Errorf("unknown identifier with name %q", lit)
+			return nil, newUnknownKeywordError(lit, lengthKeyword)
 		}
 
 	default:
@@ -705,7 +730,7 @@ func (p *Parser) scanBuiltInFloatFunc() (*ast.EmitFloatFunc, error) {
 			rule = p.scanFuncStringAtof
 
 		default:
-			return nil, fmt.Errorf("unknown identifier with name %q", lit)
+			return nil, newUnknownKeywordError(lit, atofKeyword)
 		}
 
 	default:
@@ -734,7 +759,7 @@ func (p *Parser) scanBuiltInBoolFunc() (*ast.EmitBooleanFunc, error) {
 			rule = p.scanFuncStringContains
 
 		default:
-			return nil, fmt.Errorf("unknown identifier with name %q", lit)
+			return nil, newUnknownKeywordError(lit, regexpKeyword, containsKeyword)
 		}
 
 	default:
@@ -767,7 +792,7 @@ func (p *Parser) scanAlgBoolOps(boolFunc *ast.EmitBooleanFunc) error {
 			return p.scanAlgBoolOpsTwoAry(boolFunc, lhsArg)
 
 		default:
-			return fmt.Errorf("unknown identifier with name %q", lit)
+			return newUnknownKeywordError(lit, notKeyword, regexpKeyword, containsKeyword, trueKeyword, falseKeyword)
 		}
 
 	default:
@@ -790,7 +815,7 @@ func (p *Parser) scanAlgBoolOpsUnary(boolFunc *ast.EmitBooleanFunc) error {
 		case notKeyword:
 			return p.scanFuncBooleanNot(boolFunc.Algebra)
 		default:
-			return fmt.Errorf("unknown identifier with name %q", lit)
+			return newUnknownKeywordError(lit, notKeyword)
 		}
 
 	default:
@@ -819,7 +844,7 @@ func (p *Parser) scanAlgBoolOpsTwoAry(boolFunc *ast.EmitBooleanFunc, lhs *ast.Bo
 			return p.scanFuncBooleanOr(boolFunc.Algebra, lhs)
 
 		default:
-			return fmt.Errorf("unknown identifier with name %q", lit)
+			return newUnknownKeywordError(lit, xorKeyword, andKeyword, orKeyword)
 		}
 
 	default:
@@ -847,7 +872,7 @@ func (p *Parser) scanAlgNumberOps(numFunc *ast.EmitNumberFunc) error {
 			return p.scanAlgNumberOpsTwoAry(numFunc, lhsArg)
 
 		default:
-			return fmt.Errorf("unknown identifier with name %q", lit)
+			return newUnknownKeywordError(lit, lengthKeyword, atofKeyword)
 		}
 
 	case token.LeftParens:
@@ -1109,7 +1134,7 @@ func (p *Parser) scanStringArg() (*ast.StringArg, error) {
 			fn, err := p.scanBuiltInStrFunc()
 			return &ast.StringArg{EmitStringFunc: fn}, err
 		default:
-			return nil, fmt.Errorf("unknown identifier with name %q", lit)
+			return nil, newUnknownKeywordError(lit, substringKeyword)
 		}
 	default:
 		return nil, newSyntaxError(tok, token.Quote, token.InlineString)
@@ -1133,7 +1158,7 @@ func (p *Parser) scanBooleanArg() (*ast.BooleanArg, error) {
 			return &ast.BooleanArg{Boolean: &v}, err
 
 		default:
-			return nil, fmt.Errorf("unknown identifier with name %q", lit)
+			return nil, newUnknownKeywordError(lit, regexpKeyword, containsKeyword, trueKeyword, falseKeyword)
 		}
 	default:
 		return nil, newSyntaxError(tok, token.InlineString)
@@ -1162,7 +1187,7 @@ func (p *Parser) scanNumberArg() (*ast.NumberArg, error) {
 			return &ast.NumberArg{EmitNumberFunc: &ast.EmitNumberFunc{Int: fn}}, err
 
 		default:
-			return nil, fmt.Errorf("unknown identifier with name %q", lit)
+			return nil, newUnknownKeywordError(lit, atofKeyword, lengthKeyword)
 		}
 	default:
 		return nil, newSyntaxError(tok, token.Quote, token.InlineString)
@@ -1187,7 +1212,7 @@ func (p *Parser) scanIntegerArg() (*ast.IntegerArg, error) {
 			return &ast.IntegerArg{EmitIntFunc: fn}, err
 
 		default:
-			return nil, fmt.Errorf("unknown identifier with name %q", lit)
+			return nil, newUnknownKeywordError(lit, lengthKeyword)
 		}
 	default:
 		return nil, newSyntaxError(tok, token.Quote, token.InlineString)
@@ -1283,7 +1308,7 @@ func (p *Parser) scanInlineStringKeyword(kw string) error {
 		return newSyntaxError(tok, token.InlineString)
 	}
 	if lit != kw {
-		return fmt.Errorf("want keyword %q, was %q", kw, lit)
+		return newUnknownKeywordError(lit, kw)
 	}
 	return nil
 }
