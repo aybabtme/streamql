@@ -3,7 +3,6 @@ package parser
 import (
 	"encoding/json"
 	"io"
-	"log"
 	"reflect"
 	"strings"
 	"testing"
@@ -317,29 +316,100 @@ func TestPositiveParse(t *testing.T) {
 	}
 
 	for n, tt := range tests {
-		t.Logf("test #%d, input %q", n, tt.input)
-		log.Printf("test #%d, input %q", n, tt.input)
+		t.Run("", func(t *testing.T) {
+			t.Logf("test #%d, input %q", n, tt.input)
 
-		got, err := NewParser(strings.NewReader(tt.input)).Parse()
-		if err != nil {
-			t.Errorf("%+v", err)
-			continue
-		}
-		if !reflect.DeepEqual(tt.want, got) {
+			got, err := NewParser(strings.NewReader(tt.input)).Parse()
+			if err != nil {
+				t.Errorf("%+v", err)
+				return
+			}
+			if !reflect.DeepEqual(tt.want, got) {
 
-			t.Errorf("want=%#v", tt.want)
-			t.Errorf(" got=%#v", got)
+				t.Errorf("want=%#v", tt.want)
+				t.Errorf(" got=%#v", got)
 
-			wantData, _ := json.MarshalIndent(tt.want, "", "  ")
-			gotData, _ := json.MarshalIndent(got, "", "  ")
+				wantData, _ := json.MarshalIndent(tt.want, "", "  ")
+				gotData, _ := json.MarshalIndent(got, "", "  ")
 
-			t.Errorf("want=%#v", tt.want)
-			t.Errorf(" got=%#v", got)
+				t.Errorf("want=%#v", tt.want)
+				t.Errorf(" got=%#v", got)
 
-			t.Errorf("want=%s", string(wantData))
-			t.Errorf(" got=%s", string(gotData))
+				t.Errorf("want=%s", string(wantData))
+				t.Errorf(" got=%s", string(gotData))
 
-		}
+			}
+		})
+	}
+}
+
+func TestPositiveParseOperations(t *testing.T) {
+
+	tests := []struct {
+		input string
+		want  *ast.FiltersStmt
+	}{
+		// {
+		// 	input: `1+1`,
+		// 	want: &ast.FiltersStmt{
+		// 		Filters: []*ast.FilterStmt{
+		// 			{Funcs: []*ast.FuncStmt{
+		// 				{Selector: &ast.SelectorStmt{}},
+		// 			}},
+		// 		},
+		// 	},
+		// },
+		{
+			input: `true`,
+			want: &ast.FiltersStmt{
+				Filters: []*ast.FilterStmt{
+					{Funcs: []*ast.FuncStmt{
+						{EmitFunc: &ast.EmitFuncStmt{
+							EmitBooleanFunc: &ast.EmitBooleanFunc{
+								Literal: boolp(true),
+							},
+						}},
+					}},
+				},
+			},
+		},
+		// {
+		// 	input: `atof("")`,
+		// 	want: &ast.FiltersStmt{
+		// 		Filters: []*ast.FilterStmt{
+		// 			{Funcs: []*ast.FuncStmt{
+		// 				{Selector: &ast.SelectorStmt{}},
+		// 			}},
+		// 		},
+		// 	},
+		// },
+	}
+
+	for n, tt := range tests {
+		t.Run("", func(t *testing.T) {
+			t.Logf("test #%d, input %q", n, tt.input)
+
+			got, err := NewParser(strings.NewReader(tt.input)).Parse()
+			if err != nil {
+				t.Errorf("%+v", err)
+				return
+			}
+			if !reflect.DeepEqual(tt.want, got) {
+
+				t.Errorf("want=%#v", tt.want)
+				t.Errorf(" got=%#v", got)
+
+				wantData, _ := json.MarshalIndent(tt.want, "", "  ")
+				gotData, _ := json.MarshalIndent(got, "", "  ")
+
+				t.Errorf("want=%#v", tt.want)
+				t.Errorf(" got=%#v", got)
+
+				t.Errorf("want=%s", string(wantData))
+				t.Errorf(" got=%s", string(gotData))
+
+			}
+		})
 	}
 }
 
@@ -396,19 +466,21 @@ func TestNegativeParse(t *testing.T) {
 	}
 
 	for n, tt := range tests {
-		t.Logf("test #%d, input %q", n, tt.input)
+		t.Run("", func(t *testing.T) {
+			t.Logf("test #%d, input %q", n, tt.input)
 
-		tree, got := NewParser(strings.NewReader(tt.input)).Parse()
-		if got == nil {
-			treeData, _ := json.MarshalIndent(tree, "", "  ")
-			t.Errorf("tree=%s", string(treeData))
-		}
-		if !reflect.DeepEqual(tt.want, got) {
-			t.Errorf("want=%v", tt.want)
-			t.Errorf(" got=%v", got)
-			// t.Errorf("want=%#v", tt.want)
-			// t.Errorf(" got=%#v", got)
-		}
+			tree, got := NewParser(strings.NewReader(tt.input)).Parse()
+			if got == nil {
+				treeData, _ := json.MarshalIndent(tree, "", "  ")
+				t.Errorf("tree=%s", string(treeData))
+			}
+			if !reflect.DeepEqual(tt.want, got) {
+				t.Errorf("want=%v", tt.want)
+				t.Errorf(" got=%v", got)
+				// t.Errorf("want=%#v", tt.want)
+				// t.Errorf(" got=%#v", got)
+			}
+		})
 	}
 }
 

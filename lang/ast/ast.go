@@ -57,12 +57,14 @@ type (
 
 type EmitBooleanFunc struct {
 	// oneof
+	Literal        *bool               `json:"literal,omitempty"`
 	StringContains *FuncStringContains `json:"string_contains,omitempty"`
 	StringRegexp   *FuncStringRegexp   `json:"string_regexp,omitempty"`
 	Algebra        *AlgebraBooleanOps  `json:"algebra,omitempty"`
 }
 type EmitStringFunc struct {
 	// oneof
+	Literal      *string           `json:"literal,omitempty"`
 	StringSubStr *FuncStringSubStr `json:"string_substr,omitempty"`
 }
 type EmitNumberFunc struct {
@@ -78,10 +80,12 @@ type EmitAnyFunc struct {
 
 type EmitIntFunc struct {
 	// oneof
+	Literal      *int64            `json:"literal,omitempty"`
 	StringLength *FuncStringLength `json:"string_length,omitempty"`
 }
 type EmitFloatFunc struct {
 	// oneof
+	Literal    *float64        `json:"literal,omitempty"`
 	StringAtof *FuncStringAtof `json:"string_atof,omitempty"`
 }
 
