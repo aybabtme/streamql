@@ -350,39 +350,168 @@ func TestPositiveParseOperations(t *testing.T) {
 		want  *ast.FiltersStmt
 	}{
 		// {
-		// 	input: `1+1`,
+		// 	input: `true`,
 		// 	want: &ast.FiltersStmt{
 		// 		Filters: []*ast.FilterStmt{
 		// 			{Funcs: []*ast.FuncStmt{
-		// 				{Selector: &ast.SelectorStmt{}},
+		// 				{EmitFunc: &ast.EmitFuncStmt{
+		// 					EmitBooleanFunc: &ast.EmitBooleanFunc{
+		// 						Literal: &ast.BooleanArg{Boolean: boolp(true)},
+		// 					},
+		// 				}},
 		// 			}},
 		// 		},
 		// 	},
 		// },
+		// {
+		// 	input: `42`,
+		// 	want: &ast.FiltersStmt{
+		// 		Filters: []*ast.FilterStmt{
+		// 			{Funcs: []*ast.FuncStmt{
+		// 				{EmitFunc: &ast.EmitFuncStmt{
+		// 					EmitNumberFunc: &ast.EmitNumberFunc{
+		// 						Float: &ast.EmitFloatFunc{
+		// 							Literal: &ast.NumberArg{Number: float64p(42)},
+		// 						},
+		// 					},
+		// 				}},
+		// 			}},
+		// 		},
+		// 	},
+		// },
+
+		// {
+		// 	input: `1+1`,
+		// 	want: &ast.FiltersStmt{
+		// 		Filters: []*ast.FilterStmt{
+		// 			{Funcs: []*ast.FuncStmt{
+		// 				{EmitFunc: &ast.EmitFuncStmt{
+		// 					EmitNumberFunc: &ast.EmitNumberFunc{
+		// 						Algebra: &ast.AlgebraNumberOps{
+		// 							Add: &ast.FuncNumberAdd{
+		// 								LHS: &ast.NumberArg{Number: float64p(1)},
+		// 								RHS: &ast.NumberArg{Number: float64p(1)},
+		// 							},
+		// 						},
+		// 					},
+		// 				}},
+		// 			}},
+		// 		},
+		// 	},
+		// },
+
+		// {
+		// 	input: `atof("not a number lol")`,
+		// 	want: &ast.FiltersStmt{
+		// 		Filters: []*ast.FilterStmt{
+		// 			{Funcs: []*ast.FuncStmt{
+		// 				{EmitFunc: &ast.EmitFuncStmt{
+		// 					EmitNumberFunc: &ast.EmitNumberFunc{
+		// 						Float: &ast.EmitFloatFunc{
+		// 							Literal: &ast.NumberArg{
+		// 								EmitNumberFunc: &ast.EmitNumberFunc{
+		// 									Float: &ast.EmitFloatFunc{
+		// 										StringAtof: &ast.FuncStringAtof{
+		// 											String: &ast.StringArg{String: stringp("not a number lol")},
+		// 										},
+		// 									},
+		// 								},
+		// 							},
+		// 						},
+		// 					},
+		// 				}},
+		// 			}},
+		// 		},
+		// 	},
+		// },
+
+		// {
+		// 	input: `regexp("not a number lol", .)`,
+		// 	want: &ast.FiltersStmt{
+		// 		Filters: []*ast.FilterStmt{
+		// 			{Funcs: []*ast.FuncStmt{
+		// 				{EmitFunc: &ast.EmitFuncStmt{
+		// 					EmitBooleanFunc: &ast.EmitBooleanFunc{
+		// 						Literal: &ast.BooleanArg{
+		// 							EmitBooleanFunc: &ast.EmitBooleanFunc{
+		// 								StringRegexp: &ast.FuncStringRegexp{
+		// 									Expression: &ast.StringArg{String: stringp("not a number lol")},
+		// 									Target:     &ast.StringArg{Selector: &ast.SelectorStmt{}},
+		// 								},
+		// 							},
+		// 						},
+		// 					},
+		// 				}},
+		// 			}},
+		// 		},
+		// 	},
+		// },
+		// {
+		// 	input: `regexp("not a number lol", "lol")`,
+		// 	want: &ast.FiltersStmt{
+		// 		Filters: []*ast.FilterStmt{
+		// 			{Funcs: []*ast.FuncStmt{
+		// 				{EmitFunc: &ast.EmitFuncStmt{
+		// 					EmitBooleanFunc: &ast.EmitBooleanFunc{
+		// 						Literal: &ast.BooleanArg{
+		// 							EmitBooleanFunc: &ast.EmitBooleanFunc{
+		// 								StringRegexp: &ast.FuncStringRegexp{
+		// 									Expression: &ast.StringArg{String: stringp("not a number lol")},
+		// 									Target:     &ast.StringArg{String: stringp("lol")},
+		// 								},
+		// 							},
+		// 						},
+		// 					},
+		// 				}},
+		// 			}},
+		// 		},
+		// 	},
+		// },
+
+		// {
+		// 	input: `length("lol")`,
+		// 	want: &ast.FiltersStmt{
+		// 		Filters: []*ast.FilterStmt{
+		// 			{Funcs: []*ast.FuncStmt{
+		// 				{EmitFunc: &ast.EmitFuncStmt{
+		// 					EmitNumberFunc: &ast.EmitNumberFunc{
+		// 						Float: &ast.EmitFloatFunc{
+		// 							Literal: &ast.NumberArg{
+		// 								EmitNumberFunc: &ast.EmitNumberFunc{
+		// 									Int: &ast.EmitIntFunc{
+		// 										StringLength: &ast.FuncStringLength{
+		// 											String: &ast.StringArg{String: stringp("lol")},
+		// 										},
+		// 									},
+		// 								},
+		// 							},
+		// 						},
+		// 					},
+		// 				}},
+		// 			}},
+		// 		},
+		// 	},
+		// },
+
 		{
-			input: `true`,
+			input: `true and true`,
 			want: &ast.FiltersStmt{
 				Filters: []*ast.FilterStmt{
 					{Funcs: []*ast.FuncStmt{
 						{EmitFunc: &ast.EmitFuncStmt{
-							EmitBooleanFunc: &ast.EmitBooleanFunc{
-								Literal: boolp(true),
+							EmitNumberFunc: &ast.EmitNumberFunc{
+								Algebra: &ast.AlgebraNumberOps{
+									Add: &ast.FuncNumberAdd{
+										LHS: &ast.NumberArg{Number: float64p(1)},
+										RHS: &ast.NumberArg{Number: float64p(1)},
+									},
+								},
 							},
 						}},
 					}},
 				},
 			},
 		},
-		// {
-		// 	input: `atof("")`,
-		// 	want: &ast.FiltersStmt{
-		// 		Filters: []*ast.FilterStmt{
-		// 			{Funcs: []*ast.FuncStmt{
-		// 				{Selector: &ast.SelectorStmt{}},
-		// 			}},
-		// 		},
-		// 	},
-		// },
 	}
 
 	for n, tt := range tests {
@@ -484,7 +613,7 @@ func TestNegativeParse(t *testing.T) {
 	}
 }
 
-func intp(v int) *int             { return &v }
+func intp(v int64) *int64         { return &v }
 func stringp(v string) *string    { return &v }
 func boolp(v bool) *bool          { return &v }
 func float64p(v float64) *float64 { return &v }

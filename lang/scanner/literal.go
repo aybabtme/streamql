@@ -165,7 +165,7 @@ func ParseNumber(lit string) (float64, error) {
 	var (
 		hasDecimal  = decIdx != -1
 		hasExponent = expIdx != -1
-		intPart     int
+		intPart     int64
 		err         error
 	)
 
@@ -220,18 +220,18 @@ func ParseNumber(lit string) (float64, error) {
 		if err != nil {
 			return 0, err
 		}
-		v *= math.Pow10(expPart)
+		v *= math.Pow10(int(expPart))
 	}
 	return v, nil
 }
 
-func ParseInteger(lit string) (int, error) {
+func ParseInteger(lit string) (int64, error) {
 	return parseInteger(strings.NewReader(lit))
 }
 
-func parseInteger(rd *strings.Reader) (int, error) {
+func parseInteger(rd *strings.Reader) (int64, error) {
 	neg := false
-	v := int(0)
+	v := int64(0)
 
 	ch, _, err := rd.ReadRune()
 	if err != nil {
@@ -261,7 +261,7 @@ func parseInteger(rd *strings.Reader) (int, error) {
 		}
 
 	}
-	v += int(digit)
+	v += int64(digit)
 	for {
 		digit, err := parseDigit(rd)
 		switch err {
@@ -272,7 +272,7 @@ func parseInteger(rd *strings.Reader) (int, error) {
 			return v, nil
 		case nil:
 			v *= 10
-			v += int(digit)
+			v += int64(digit)
 		default:
 			return v, err
 		}

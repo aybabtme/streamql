@@ -57,14 +57,14 @@ type (
 
 type EmitBooleanFunc struct {
 	// oneof
-	Literal        *bool               `json:"literal,omitempty"`
+	Literal        *BooleanArg         `json:"literal,omitempty"`
 	StringContains *FuncStringContains `json:"string_contains,omitempty"`
 	StringRegexp   *FuncStringRegexp   `json:"string_regexp,omitempty"`
 	Algebra        *AlgebraBooleanOps  `json:"algebra,omitempty"`
 }
 type EmitStringFunc struct {
 	// oneof
-	Literal      *string           `json:"literal,omitempty"`
+	Literal      *StringArg        `json:"literal,omitempty"`
 	StringSubStr *FuncStringSubStr `json:"string_substr,omitempty"`
 }
 type EmitNumberFunc struct {
@@ -80,12 +80,12 @@ type EmitAnyFunc struct {
 
 type EmitIntFunc struct {
 	// oneof
-	Literal      *int64            `json:"literal,omitempty"`
+	Literal      *IntegerArg       `json:"literal,omitempty"`
 	StringLength *FuncStringLength `json:"string_length,omitempty"`
 }
 type EmitFloatFunc struct {
 	// oneof
-	Literal    *float64        `json:"literal,omitempty"`
+	Literal    *NumberArg      `json:"literal,omitempty"`
 	StringAtof *FuncStringAtof `json:"string_atof,omitempty"`
 }
 
@@ -128,18 +128,18 @@ type NumberArg struct {
 
 type IntegerArg struct {
 	// oneof
-	Integer     *int          `json:"integer,omitempty"`
+	Integer     *int64        `json:"integer,omitempty"`
 	EmitIntFunc *EmitIntFunc  `json:"emit_int_func,omitempty"`
 	Selector    *SelectorStmt `json:"selector,omitempty"`
 }
 
 type FuncStringContains struct {
-	SubString *StringArg    `json:"substring"`
-	Selector  *SelectorStmt `json:"selector"`
+	SubString *StringArg `json:"substring"`
+	Target    *StringArg `json:"target"`
 }
 type FuncStringRegexp struct {
-	Expression *StringArg    `json:"expression"`
-	Selector   *SelectorStmt `json:"selector"`
+	Expression *StringArg `json:"expression"`
+	Target     *StringArg `json:"target"`
 }
 type FuncStringSubStr struct {
 	String *StringArg  `json:"string"`
