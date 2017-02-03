@@ -4,11 +4,38 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
+
+	"runtime"
+
+	"strings"
 
 	"github.com/aybabtme/streamql/lang/ast"
 	"github.com/aybabtme/streamql/lang/scanner"
 	"github.com/aybabtme/streamql/lang/token"
 )
+
+// debug
+
+var stackDepth = 0
+
+func init() { log.SetFlags(0) }
+
+func debug() func() {
+	pc, _, _, _ := runtime.Caller(1)
+	name := runtime.FuncForPC(pc).Name()
+	name = strings.TrimPrefix(name, "github.com/aybabtme/streamql/lang/parser.(*Parser).")
+
+	log.Printf("%s<%s>", strings.Repeat(" ", stackDepth), name)
+
+	stackDepth++
+	return func() {
+		stackDepth--
+		log.Printf("%s</%s>", strings.Repeat(" ", stackDepth), name)
+	}
+}
+
+// else
 
 var _ error = (*SyntaxError)(nil)
 
@@ -144,7 +171,6 @@ func (p *Parser) scanFilterChain(stmt *ast.FiltersStmt) error {
 
 func (p *Parser) scanFuncsStmt(stmt *ast.FilterStmt) error {
 	if err := p.scanFuncStmt(stmt); err != nil {
-
 		return err
 	}
 	switch err := p.scanWhitespace(); err {
@@ -563,9 +589,10 @@ func (p *Parser) scanEmitAnyFunc() (*ast.EmitAnyFunc, error) {
 	if tok != token.InlineString {
 		return nil, newSyntaxError(tok, token.InlineString)
 	}
+	anyFunc := new(ast.EmitAnyFunc)
 	switch lit {
 	case selectKeyword:
-		return p.scanEmitAnyFunc()
+		return anyFunc, p.scanFuncAnySelect(anyFunc)
 	default:
 		return nil, newUnknownKeywordError(lit, selectKeyword)
 	}
@@ -811,6 +838,17 @@ func (p *Parser) scanAlgBoolOpsUnary(boolFunc *ast.EmitBooleanFunc) error {
 	}
 }
 func (p *Parser) scanAlgBoolOpsTwoAry(boolFunc *ast.EmitBooleanFunc, lhs *ast.BooleanArg) error {
+
+	err := p.scanWhitespace()
+	switch err {
+	case io.EOF:
+		boolFunc.Literal = lhs
+		return parseComplete
+	case nil: // continue
+	default:
+		return err
+	}
+
 	tok, lit, err := p.scan()
 	switch err {
 	case io.EOF:
@@ -893,6 +931,17 @@ func (p *Parser) scanAlgNumberOps(numFunc *ast.EmitNumberFunc) error {
 }
 
 func (p *Parser) scanAlgNumberOpsTwoAry(numFunc *ast.EmitNumberFunc, lhs *ast.NumberArg) error {
+
+	err := p.scanWhitespace()
+	switch err {
+	case io.EOF:
+		numFunc.Float = &ast.EmitFloatFunc{Literal: lhs}
+		return parseComplete
+	case nil: // continue
+	default:
+		return err
+	}
+
 	tok, _, err := p.scan()
 	switch err {
 	case io.EOF:
@@ -960,14 +1009,17 @@ func (p *Parser) scanFuncStringSubStr(strFunc *ast.EmitStringFunc) (err error) {
 	err = p.scanFunc(
 		substringKeyword,
 		func() error {
+
 			fn.String, err = p.scanStringArg()
 			return err
 		},
 		func() error {
+
 			fn.From, err = p.scanIntegerArg()
 			return err
 		},
 		func() error {
+
 			fn.To, err = p.scanIntegerArg()
 			return err
 		},
@@ -1024,6 +1076,9 @@ func (p *Parser) scanFuncBooleanOr(alg *ast.AlgebraBooleanOps, lhs *ast.BooleanA
 	if err = p.scanInlineStringKeyword(orKeyword); err != nil {
 		return err
 	}
+	if err := p.scanWhitespace(); err != nil {
+		return err
+	}
 	if fn.RHS, err = p.scanBooleanArg(); err != nil {
 		return err
 	}
@@ -1034,6 +1089,9 @@ func (p *Parser) scanFuncBooleanOr(alg *ast.AlgebraBooleanOps, lhs *ast.BooleanA
 func (p *Parser) scanFuncBooleanAnd(alg *ast.AlgebraBooleanOps, lhs *ast.BooleanArg) (err error) {
 	fn := &ast.FuncBooleanAnd{LHS: lhs}
 	if err = p.scanInlineStringKeyword(andKeyword); err != nil {
+		return err
+	}
+	if err := p.scanWhitespace(); err != nil {
 		return err
 	}
 	if fn.RHS, err = p.scanBooleanArg(); err != nil {
@@ -1047,6 +1105,9 @@ func (p *Parser) scanFuncBooleanXOR(alg *ast.AlgebraBooleanOps, lhs *ast.Boolean
 	if err = p.scanInlineStringKeyword(xorKeyword); err != nil {
 		return err
 	}
+	if err := p.scanWhitespace(); err != nil {
+		return err
+	}
 	if fn.RHS, err = p.scanBooleanArg(); err != nil {
 		return err
 	}
@@ -1056,6 +1117,9 @@ func (p *Parser) scanFuncBooleanXOR(alg *ast.AlgebraBooleanOps, lhs *ast.Boolean
 func (p *Parser) scanFuncBooleanNot(alg *ast.AlgebraBooleanOps) (err error) {
 	fn := new(ast.FuncBooleanNot)
 	if err = p.scanInlineStringKeyword(notKeyword); err != nil {
+		return err
+	}
+	if err := p.scanWhitespace(); err != nil {
 		return err
 	}
 	if fn.Boolean, err = p.scanBooleanArg(); err != nil {
@@ -1072,6 +1136,9 @@ func (p *Parser) scanFuncNumberAdd(alg *ast.AlgebraNumberOps, lhs *ast.NumberArg
 	if err = p.scanPlusSymbol(); err != nil {
 		return err
 	}
+	if err := p.scanWhitespace(); err != nil {
+		return err
+	}
 	fn.RHS, err = p.scanNumberArg()
 	alg.Add = fn
 	return err
@@ -1079,6 +1146,9 @@ func (p *Parser) scanFuncNumberAdd(alg *ast.AlgebraNumberOps, lhs *ast.NumberArg
 func (p *Parser) scanFuncNumberSubtract(alg *ast.AlgebraNumberOps, lhs *ast.NumberArg) (err error) {
 	fn := &ast.FuncNumberSubtract{LHS: lhs}
 	if err = p.scanMinusSymbol(); err != nil {
+		return err
+	}
+	if err := p.scanWhitespace(); err != nil {
 		return err
 	}
 	fn.RHS, err = p.scanNumberArg()
@@ -1090,6 +1160,9 @@ func (p *Parser) scanFuncNumberMultiply(alg *ast.AlgebraNumberOps, lhs *ast.Numb
 	if err = p.scanMultiplySymbol(); err != nil {
 		return err
 	}
+	if err := p.scanWhitespace(); err != nil {
+		return err
+	}
 	fn.RHS, err = p.scanNumberArg()
 	alg.Multiply = fn
 	return err
@@ -1097,6 +1170,9 @@ func (p *Parser) scanFuncNumberMultiply(alg *ast.AlgebraNumberOps, lhs *ast.Numb
 func (p *Parser) scanFuncNumberDivide(alg *ast.AlgebraNumberOps, lhs *ast.NumberArg) (err error) {
 	fn := &ast.FuncNumberDivide{LHS: lhs}
 	if err = p.scanDivideSymbol(); err != nil {
+		return err
+	}
+	if err := p.scanWhitespace(); err != nil {
 		return err
 	}
 	fn.RHS, err = p.scanNumberArg()
@@ -1119,6 +1195,7 @@ func (p *Parser) scanStringArg() (*ast.StringArg, error) {
 		return &ast.StringArg{String: &v}, err
 
 	case token.InlineString:
+
 		switch lit {
 		case substringKeyword:
 			fn, err := p.scanBuiltInStrFunc()
