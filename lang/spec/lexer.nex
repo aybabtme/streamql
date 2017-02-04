@@ -1,0 +1,64 @@
+
+/[.]/    { lval.emit(tokDot) }
+/\[/    { lval.emit(tokLeftBracket) }
+/\]/    { lval.emit(tokRightBracket) }
+/[(]/    { lval.emit(tokLeftParens) }
+/[)]/    { lval.emit(tokRightParens) }
+/[:]/    { lval.emit(tokColon) }
+/[|]/    { lval.emit(tokPipe) }
+
+/[!]/    { lval.emit(tokLogNot) }
+/[&][&]/  { lval.emit(tokLogAnd) }
+/[|][|]/  { lval.emit(tokLogOr) }
+
+/\+/    { lval.emit(tokNumAdd) }
+/\-/    { lval.emit(tokNumSub) }
+/\*/    { lval.emit(tokNumMul) }
+/\//    { lval.emit(tokNumDiv) }
+
+/[=][=]/  { lval.emit(tokCmpEq) }
+/[!][=]/  { lval.emit(tokCmpNotEq) }
+/[>]/     { lval.emit(tokCmpGt) }
+/[>][=]/  { lval.emit(tokCmpGtOrEq) }
+/[<]/     { lval.emit(tokCmpLs) }
+/[<][=]/  { lval.emit(tokCmpLsOrEq) }
+
+/[ \n\t\r]*/          { lval.emit(tokWS) }
+
+/true|false/                        { lval.emit(tokBool) }
+/null/                              { lval.emit(tokNull) }
+/[a-zA-Z_][a-zA-Z0-9_]*/            { lval.emit(tokIdentifier) }
+/\-?(0|[1-9][0-9]*)\.[0-9]+/        { lval.emit(tokFloat) }
+/\-?(0|[1-9][0-9]*)/                { lval.emit(tokInt) }
+/["]([^\\\"]|\\(a|b|f|n|r|t|v|\\|\'|"|x[0-9A-Fa-f][0-9A-Fa-f]|u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]|U[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]))*["]/   { lval.emit(tokString) }
+
+/./ { lval.setError() }
+
+//
+package spec
+
+import (
+    "fmt"
+)
+
+type yySymType struct {
+    lex    *Lexer
+    tokens []tok
+    err    error
+}
+
+func (yy *yySymType) emit(id string) {
+
+  yy.tokens = append(yy.tokens, tok{id: id, lit: yy.lex.Text()})
+}
+
+func (yy *yySymType) setError() {
+    yy.err = fmt.Errorf("%d:%d invalid argument after %q", yy.lex.Line(), yy.lex.Column(), yy.lex.Text())
+}
+
+func Tokenize(r io.Reader) ([]tok, error) {
+  lex := NewLexer(r)
+  v := &yySymType{lex: lex}
+  lex.Lex(v)
+  return v.tokens, v.err
+}
