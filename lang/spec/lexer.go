@@ -189,6 +189,24 @@ var dfas = []dfa{
 		},
 	}, []int{ /* Start-of-input transitions */ -1, -1}, []int{ /* End-of-input transitions */ -1, -1}, nil},
 
+	// [,]
+	{[]bool{false, true}, []func(rune) int{ // Transitions
+		func(r rune) int {
+			switch r {
+			case 44:
+				return 1
+			}
+			return -1
+		},
+		func(r rune) int {
+			switch r {
+			case 44:
+				return -1
+			}
+			return -1
+		},
+	}, []int{ /* Start-of-input transitions */ -1, -1}, []int{ /* End-of-input transitions */ -1, -1}, nil},
+
 	// \[
 	{[]bool{false, true}, []func(rune) int{ // Transitions
 		func(r rune) int {
@@ -590,23 +608,6 @@ var dfas = []dfa{
 			return -1
 		},
 	}, []int{ /* Start-of-input transitions */ -1, -1, -1}, []int{ /* End-of-input transitions */ -1, -1, -1}, nil},
-
-	// [ \n\t\r]*
-	{[]bool{true}, []func(rune) int{ // Transitions
-		func(r rune) int {
-			switch r {
-			case 9:
-				return 0
-			case 10:
-				return 0
-			case 13:
-				return 0
-			case 32:
-				return 0
-			}
-			return -1
-		},
-	}, []int{ /* Start-of-input transitions */ -1}, []int{ /* End-of-input transitions */ -1}, nil},
 
 	// true|false
 	{[]bool{false, false, false, false, false, true, false, false, false, true}, []func(rune) int{ // Transitions
@@ -2384,6 +2385,23 @@ var dfas = []dfa{
 		},
 	}, []int{ /* Start-of-input transitions */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}, []int{ /* End-of-input transitions */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}, nil},
 
+	// [ \n\t\r]*
+	{[]bool{true}, []func(rune) int{ // Transitions
+		func(r rune) int {
+			switch r {
+			case 9:
+				return 0
+			case 10:
+				return 0
+			case 13:
+				return 0
+			case 32:
+				return 0
+			}
+			return -1
+		},
+	}, []int{ /* Start-of-input transitions */ -1}, []int{ /* End-of-input transitions */ -1}, nil},
+
 	// .
 	{[]bool{false, true}, []func(rune) int{ // Transitions
 		func(r rune) int {
@@ -2455,115 +2473,118 @@ OUTER0:
 		switch yylex.next(0) {
 		case 0:
 			{
-				lval.emit(tokDot)
+				return lval.emit(yylex, Dot, tokDot)
 			}
 		case 1:
 			{
-				lval.emit(tokLeftBracket)
+				return lval.emit(yylex, Comma, tokComma)
 			}
 		case 2:
 			{
-				lval.emit(tokRightBracket)
+				return lval.emit(yylex, LeftBracket, tokLeftBracket)
 			}
 		case 3:
 			{
-				lval.emit(tokLeftParens)
+				return lval.emit(yylex, RightBracket, tokRightBracket)
 			}
 		case 4:
 			{
-				lval.emit(tokRightParens)
+				return lval.emit(yylex, LeftParens, tokLeftParens)
 			}
 		case 5:
 			{
-				lval.emit(tokColon)
+				return lval.emit(yylex, RightParens, tokRightParens)
 			}
 		case 6:
 			{
-				lval.emit(tokPipe)
+				return lval.emit(yylex, Colon, tokColon)
 			}
 		case 7:
 			{
-				lval.emit(tokLogNot)
+				return lval.emit(yylex, Pipe, tokPipe)
 			}
 		case 8:
 			{
-				lval.emit(tokLogAnd)
+				return lval.emit(yylex, LogNot, tokLogNot)
 			}
 		case 9:
 			{
-				lval.emit(tokLogOr)
+				return lval.emit(yylex, LogAnd, tokLogAnd)
 			}
 		case 10:
 			{
-				lval.emit(tokNumAdd)
+				return lval.emit(yylex, LogOr, tokLogOr)
 			}
 		case 11:
 			{
-				lval.emit(tokNumSub)
+				return lval.emit(yylex, NumAdd, tokNumAdd)
 			}
 		case 12:
 			{
-				lval.emit(tokNumMul)
+				return lval.emit(yylex, NumSub, tokNumSub)
 			}
 		case 13:
 			{
-				lval.emit(tokNumDiv)
+				return lval.emit(yylex, NumMul, tokNumMul)
 			}
 		case 14:
 			{
-				lval.emit(tokCmpEq)
+				return lval.emit(yylex, NumDiv, tokNumDiv)
 			}
 		case 15:
 			{
-				lval.emit(tokCmpNotEq)
+				return lval.emit(yylex, CmpEq, tokCmpEq)
 			}
 		case 16:
 			{
-				lval.emit(tokCmpGt)
+				return lval.emit(yylex, CmpNotEq, tokCmpNotEq)
 			}
 		case 17:
 			{
-				lval.emit(tokCmpGtOrEq)
+				return lval.emit(yylex, CmpGt, tokCmpGt)
 			}
 		case 18:
 			{
-				lval.emit(tokCmpLs)
+				return lval.emit(yylex, CmpGtOrEq, tokCmpGtOrEq)
 			}
 		case 19:
 			{
-				lval.emit(tokCmpLsOrEq)
+				return lval.emit(yylex, CmpLs, tokCmpLs)
 			}
 		case 20:
 			{
-				lval.emit(tokWS)
+				return lval.emit(yylex, CmpLsOrEq, tokCmpLsOrEq)
 			}
 		case 21:
 			{
-				lval.emit(tokBool)
+				return lval.emit(yylex, Bool, tokBool)
 			}
 		case 22:
 			{
-				lval.emit(tokNull)
+				return lval.emit(yylex, Null, tokNull)
 			}
 		case 23:
 			{
-				lval.emit(tokIdentifier)
+				return lval.emit(yylex, Identifier, tokIdentifier)
 			}
 		case 24:
 			{
-				lval.emit(tokFloat)
+				return lval.emit(yylex, Float, tokFloat)
 			}
 		case 25:
 			{
-				lval.emit(tokInt)
+				return lval.emit(yylex, Int, tokInt)
 			}
 		case 26:
 			{
-				lval.emit(tokString)
+				return lval.emit(yylex, String, tokString)
 			}
 		case 27:
+			{ /* discard whitespace */
+			}
+		case 28:
 			{
-				lval.setError()
+				return lval.setError(yylex)
 			}
 		default:
 			break OUTER0
@@ -2574,25 +2595,27 @@ OUTER0:
 
 	return 0
 }
-
-type yySymType struct {
-	lex    *Lexer
-	tokens []tok
-	err    error
+func (yy *yySymType) emit(lex *Lexer, tokID int, id string) int {
+	if yy.err != nil {
+		return -1
+	}
+	t := tok{id: id, lit: lex.Text()}
+	yy.cur = t
+	yy.curID = tokID
+	return tokID
 }
 
-func (yy *yySymType) emit(id string) {
-
-	yy.tokens = append(yy.tokens, tok{id: id, lit: yy.lex.Text()})
-}
-
-func (yy *yySymType) setError() {
-	yy.err = fmt.Errorf("%d:%d invalid argument after %q", yy.lex.Line(), yy.lex.Column(), yy.lex.Text())
+func (yy *yySymType) setError(lex *Lexer) int {
+	yy.err = fmt.Errorf("%d:%d invalid argument after %q", lex.Line(), lex.Column(), lex.Text())
+	return -1
 }
 
 func Tokenize(r io.Reader) ([]tok, error) {
 	lex := NewLexer(r)
-	v := &yySymType{lex: lex}
-	lex.Lex(v)
-	return v.tokens, v.err
+	var tokens []tok
+	v := &yySymType{}
+	for lex.Lex(v) != 0 {
+		tokens = append(tokens, v.cur)
+	}
+	return tokens, v.err
 }

@@ -1,38 +1,39 @@
 
-/[.]/    { lval.emit(tokDot) }
-/\[/    { lval.emit(tokLeftBracket) }
-/\]/    { lval.emit(tokRightBracket) }
-/[(]/    { lval.emit(tokLeftParens) }
-/[)]/    { lval.emit(tokRightParens) }
-/[:]/    { lval.emit(tokColon) }
-/[|]/    { lval.emit(tokPipe) }
+/[.]/    { return lval.emit(yylex, Dot, tokDot) }
+/[,]/    { return lval.emit(yylex, Comma, tokComma) }
+/\[/     { return lval.emit(yylex, LeftBracket, tokLeftBracket) }
+/\]/     { return lval.emit(yylex, RightBracket, tokRightBracket) }
+/[(]/    { return lval.emit(yylex, LeftParens, tokLeftParens) }
+/[)]/    { return lval.emit(yylex, RightParens, tokRightParens) }
+/[:]/    { return lval.emit(yylex, Colon, tokColon) }
+/[|]/    { return lval.emit(yylex, Pipe, tokPipe) }
 
-/[!]/    { lval.emit(tokLogNot) }
-/[&][&]/  { lval.emit(tokLogAnd) }
-/[|][|]/  { lval.emit(tokLogOr) }
+/[!]/     { return lval.emit(yylex, LogNot, tokLogNot) }
+/[&][&]/  { return lval.emit(yylex, LogAnd, tokLogAnd) }
+/[|][|]/  { return lval.emit(yylex, LogOr, tokLogOr) }
 
-/\+/    { lval.emit(tokNumAdd) }
-/\-/    { lval.emit(tokNumSub) }
-/\*/    { lval.emit(tokNumMul) }
-/\//    { lval.emit(tokNumDiv) }
+/\+/    { return lval.emit(yylex, NumAdd, tokNumAdd) }
+/\-/    { return lval.emit(yylex, NumSub, tokNumSub) }
+/\*/    { return lval.emit(yylex, NumMul, tokNumMul) }
+/\//    { return lval.emit(yylex, NumDiv, tokNumDiv) }
 
-/[=][=]/  { lval.emit(tokCmpEq) }
-/[!][=]/  { lval.emit(tokCmpNotEq) }
-/[>]/     { lval.emit(tokCmpGt) }
-/[>][=]/  { lval.emit(tokCmpGtOrEq) }
-/[<]/     { lval.emit(tokCmpLs) }
-/[<][=]/  { lval.emit(tokCmpLsOrEq) }
+/[=][=]/  { return lval.emit(yylex, CmpEq, tokCmpEq) }
+/[!][=]/  { return lval.emit(yylex, CmpNotEq, tokCmpNotEq) }
+/[>]/     { return lval.emit(yylex, CmpGt, tokCmpGt) }
+/[>][=]/  { return lval.emit(yylex, CmpGtOrEq, tokCmpGtOrEq) }
+/[<]/     { return lval.emit(yylex, CmpLs, tokCmpLs) }
+/[<][=]/  { return lval.emit(yylex, CmpLsOrEq, tokCmpLsOrEq) }
 
-/[ \n\t\r]*/          { lval.emit(tokWS) }
+/true|false/                        { return lval.emit(yylex, Bool, tokBool) }
+/null/                              { return lval.emit(yylex, Null, tokNull) }
+/[a-zA-Z_][a-zA-Z0-9_]*/            { return lval.emit(yylex, Identifier, tokIdentifier) }
+/\-?(0|[1-9][0-9]*)\.[0-9]+/        { return lval.emit(yylex, Float, tokFloat) }
+/\-?(0|[1-9][0-9]*)/                { return lval.emit(yylex, Int, tokInt) }
+/["]([^\\\"]|\\(a|b|f|n|r|t|v|\\|\'|"|x[0-9A-Fa-f][0-9A-Fa-f]|u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]|U[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]))*["]/   { return lval.emit(yylex, String, tokString) }
 
-/true|false/                        { lval.emit(tokBool) }
-/null/                              { lval.emit(tokNull) }
-/[a-zA-Z_][a-zA-Z0-9_]*/            { lval.emit(tokIdentifier) }
-/\-?(0|[1-9][0-9]*)\.[0-9]+/        { lval.emit(tokFloat) }
-/\-?(0|[1-9][0-9]*)/                { lval.emit(tokInt) }
-/["]([^\\\"]|\\(a|b|f|n|r|t|v|\\|\'|"|x[0-9A-Fa-f][0-9A-Fa-f]|u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]|U[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]))*["]/   { lval.emit(tokString) }
+/[ \n\t\r]*/          { /* discard whitespace */ }
 
-/./ { lval.setError() }
+/./ { return lval.setError(yylex) }
 
 //
 package spec
@@ -41,24 +42,25 @@ import (
     "fmt"
 )
 
-type yySymType struct {
-    lex    *Lexer
-    tokens []tok
-    err    error
+func (yy *yySymType) emit(lex *Lexer, tokID int, id string) int {
+    if yy.err != nil { return -1 }
+    t := tok{id: id, lit: lex.Text()}
+    yy.cur = t
+    yy.curID = tokID
+    return tokID
 }
 
-func (yy *yySymType) emit(id string) {
-
-  yy.tokens = append(yy.tokens, tok{id: id, lit: yy.lex.Text()})
-}
-
-func (yy *yySymType) setError() {
-    yy.err = fmt.Errorf("%d:%d invalid argument after %q", yy.lex.Line(), yy.lex.Column(), yy.lex.Text())
+func (yy *yySymType) setError(lex *Lexer) int {
+    yy.err = fmt.Errorf("%d:%d invalid argument after %q", lex.Line(), lex.Column(), lex.Text())
+    return -1
 }
 
 func Tokenize(r io.Reader) ([]tok, error) {
   lex := NewLexer(r)
-  v := &yySymType{lex: lex}
-  lex.Lex(v)
-  return v.tokens, v.err
+  var tokens []tok
+  v := &yySymType{}
+  for lex.Lex(v) != 0 {
+    tokens = append(tokens, v.cur)
+  }
+  return tokens, v.err
 }

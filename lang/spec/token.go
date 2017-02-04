@@ -2,6 +2,7 @@ package spec
 
 const (
 	tokDot          = "."
+	tokComma        = ","
 	tokLeftBracket  = "["
 	tokRightBracket = "]"
 	tokLeftParens   = "("
@@ -25,13 +26,17 @@ const (
 	tokCmpLs     = "<"
 	tokCmpLsOrEq = "<="
 
-	tokWS         = "`ws`"
-	tokNull       = "`null`"
-	tokBool       = "`bool`"
-	tokIdentifier = "`id`"
-	tokString     = "`string`"
-	tokInt        = "`int`"
-	tokFloat      = "`float`"
+	tokWS           = "`ws`"
+	tokNull         = "`null`"
+	tokBool         = "`bool`"
+	tokIdentifier   = "`id`"
+	tokString       = "`string`"
+	tokInt          = "`int`"
+	tokFloat        = "`float`"
+	tokCastToBool   = "`(bool) `"
+	tokCastToInt    = "`(int) `"
+	tokCastToFloat  = "`(float) `"
+	tokCastToString = "`(string) `"
 )
 
 type tok struct {

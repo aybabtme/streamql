@@ -14,9 +14,14 @@ func TestTokenize(t *testing.T) {
 		want []tok
 	}{
 		{
-			name: `dot`,
+			name: `tokDot`,
 			args: `.`,
 			want: []tok{{tokDot, `.`}},
+		},
+		{
+			name: `tokComma`,
+			args: `,`,
+			want: []tok{{tokComma, `,`}},
 		},
 		{
 			name: `tokLeftBracket`,
@@ -114,12 +119,6 @@ func TestTokenize(t *testing.T) {
 			want: []tok{{tokCmpLsOrEq, `<=`}},
 		},
 
-		{
-			name: `tokWS`,
-			args: "\t\n\r",
-			want: []tok{{tokWS, "\t\n\r"}},
-		},
-
 		{`tokIdentifier`, `hello`, []tok{{tokIdentifier, `hello`}}},
 		{`tokIdentifier`, `helloHello`, []tok{{tokIdentifier, `helloHello`}}},
 		{`tokIdentifier`, `hello01`, []tok{{tokIdentifier, `hello01`}}},
@@ -196,21 +195,15 @@ func TestTokenize(t *testing.T) {
 				{tokColon, ":"},
 				{tokInt, "1"},
 				{tokRightBracket, "]"},
-				{tokWS, " "},
 				{tokPipe, "|"},
-				{tokWS, " "},
 				{tokIdentifier, "select"},
 				{tokLeftParens, "("},
 				{tokDot, "."},
 				{tokIdentifier, "is_red"},
-				{tokWS, " "},
 				{tokLogAnd, "&&"},
-				{tokWS, " "},
 				{tokDot, "."},
 				{tokIdentifier, "size"},
-				{tokWS, " "},
 				{tokCmpEq, "=="},
-				{tokWS, " "},
 				{tokString, `"large"`},
 				{tokRightParens, ")"},
 			},
