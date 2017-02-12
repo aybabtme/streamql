@@ -1,10 +1,6 @@
 package gomsg
 
-import (
-	"fmt"
-
-	"github.com/aybabtme/streamql/lang/spec/msg"
-)
+import "github.com/aybabtme/streamql/lang/spec/msg"
 
 // Build returns a msg.Builder that can create msg.Msg of the
 // gomsg kind.
@@ -27,68 +23,7 @@ func (sb *baseBuilder) Float(v float64) (msg.Msg, error) { return concreteFloat(
 func (sb *baseBuilder) Bool(v bool) (msg.Msg, error)     { return concreteBool(v), nil }
 func (sb *baseBuilder) Null() (msg.Msg, error)           { return concreteNull{}, nil }
 
-func (sb *baseBuilder) Convert(from msg.Msg) (msg.Msg, error) {
-	switch from.(type) {
-	case concreteNull, *concreteNull,
-		*concreteObj,
-		*concreteArr,
-		concreteStr, *concreteStr,
-		concreteInt, *concreteInt,
-		concreteFloat, *concreteFloat,
-		concreteBool, *concreteBool:
-		return from, nil
-	}
-	switch from.Type() {
-	case msg.TypeObject:
-		return sb.Object(func(ob msg.ObjectBuilder) error {
-			fromOb := from.(msg.Object)
-			for _, k := range fromOb.Keys() {
-				v := fromOb.Member(k)
-				return ob.AddMember(
-					k,
-					func(bb msg.Builder) (msg.Msg, error) {
-						return bb.Convert(v)
-					},
-				)
-			}
-			return nil
-		})
-	case msg.TypeArray:
-		return sb.Array(func(ab msg.ArrayBuilder) error {
-			fromAr := from.(msg.Array)
-			iter := fromAr.Slice(0, fromAr.Len())
-			for {
-				m, more, err := iter()
-				if err != nil {
-					return err
-				}
-				if !more {
-					return nil
-				}
-				err = ab.AddElem(func(bb msg.Builder) (msg.Msg, error) {
-					return bb.Convert(m)
-				})
-				if err != nil {
-					return err
-				}
-			}
-		})
-
-	case msg.TypeString:
-		return sb.String(from.StringVal())
-	case msg.TypeInt:
-		return sb.Int(from.IntVal())
-	case msg.TypeFloat:
-		return sb.Float(from.FloatVal())
-	case msg.TypeBool:
-		return sb.Bool(from.BoolVal())
-	case msg.TypeNull:
-		return sb.Null()
-
-	default:
-		return nil, fmt.Errorf("invalid message type: %v", from.Type())
-	}
-}
+func (sb *baseBuilder) IsOwnType(in msg.Msg) bool { _, ok := in.(internalMsg); return ok }
 
 func (sb *baseBuilder) Object(fn func(msg.ObjectBuilder) error) (msg.Msg, error) {
 	obj := new(objBuilder)

@@ -2,13 +2,21 @@ package gomsg
 
 import "github.com/aybabtme/streamql/lang/spec/msg"
 
+var _ msg.Msg = (internalMsg)(nil)
+
+type internalMsg interface {
+	msg.Msg
+	isGoMsg()
+}
+
 var (
-	_ msg.Msg  = (*concreteNull)(nil)
-	_ msg.Null = (*concreteNull)(nil)
+	_ internalMsg = (*concreteNull)(nil)
+	_ msg.Null    = (*concreteNull)(nil)
 )
 
 type concreteNull struct{}
 
+func (concreteNull) isGoMsg()                      {}
 func (concreteNull) Type() msg.Type                { panic("wrong type") }
 func (concreteNull) Member(string) msg.Msg         { panic("wrong type") }
 func (concreteNull) Keys() []string                { panic("wrong type") }
@@ -22,8 +30,8 @@ func (concreteNull) BoolVal() bool                 { panic("wrong type") }
 func (concreteNull) IsNull() bool                  { return true }
 
 var (
-	_ msg.Msg    = (*concreteObj)(nil)
-	_ msg.Object = (*concreteObj)(nil)
+	_ internalMsg = (*concreteObj)(nil)
+	_ msg.Object  = (*concreteObj)(nil)
 )
 
 type concreteObj struct {
@@ -31,6 +39,7 @@ type concreteObj struct {
 	members map[string]msg.Msg
 }
 
+func (co *concreteObj) isGoMsg()                {}
 func (co *concreteObj) Type() msg.Type          { return msg.TypeObject }
 func (co *concreteObj) IsNull() bool            { return co.members == nil }
 func (co *concreteObj) Keys() []string          { return co.keys }
@@ -45,14 +54,15 @@ func (concreteObj) FloatVal() float64             { panic("wrong type") }
 func (concreteObj) BoolVal() bool                 { panic("wrong type") }
 
 var (
-	_ msg.Msg   = (*concreteArr)(nil)
-	_ msg.Array = (*concreteArr)(nil)
+	_ internalMsg = (*concreteArr)(nil)
+	_ msg.Array   = (*concreteArr)(nil)
 )
 
 type concreteArr struct {
 	elems []msg.Msg
 }
 
+func (ca *concreteArr) isGoMsg()              {}
 func (ca *concreteArr) Type() msg.Type        { return msg.TypeArray }
 func (ca concreteArr) IsNull() bool           { return ca.elems == nil }
 func (ca *concreteArr) Len() int64            { return int64(len(ca.elems)) }
@@ -70,12 +80,13 @@ func (concreteArr) FloatVal() float64     { panic("wrong type") }
 func (concreteArr) BoolVal() bool         { panic("wrong type") }
 
 var (
-	_ msg.Msg    = concreteStr("hello")
-	_ msg.String = concreteStr("hello")
+	_ internalMsg = concreteStr("hello")
+	_ msg.String  = concreteStr("hello")
 )
 
 type concreteStr string
 
+func (concreteStr) isGoMsg()             {}
 func (concreteStr) Type() msg.Type       { return msg.TypeString }
 func (concreteStr) IsNull() bool         { return false }
 func (cs concreteStr) StringVal() string { return string(cs) }
@@ -90,12 +101,13 @@ func (concreteStr) FloatVal() float64             { panic("wrong type") }
 func (concreteStr) BoolVal() bool                 { panic("wrong type") }
 
 var (
-	_ msg.Msg = concreteInt(1)
-	_ msg.Int = concreteInt(1)
+	_ internalMsg = concreteInt(1)
+	_ msg.Int     = concreteInt(1)
 )
 
 type concreteInt int64
 
+func (concreteInt) isGoMsg()         {}
 func (concreteInt) Type() msg.Type   { return msg.TypeInt }
 func (concreteInt) IsNull() bool     { return false }
 func (ci concreteInt) IntVal() int64 { return int64(ci) }
@@ -110,12 +122,13 @@ func (concreteInt) FloatVal() float64             { panic("wrong type") }
 func (concreteInt) BoolVal() bool                 { panic("wrong type") }
 
 var (
-	_ msg.Msg   = concreteFloat(3.14159)
-	_ msg.Float = concreteFloat(3.14159)
+	_ internalMsg = concreteFloat(3.14159)
+	_ msg.Float   = concreteFloat(3.14159)
 )
 
 type concreteFloat float64
 
+func (concreteFloat) isGoMsg()             {}
 func (concreteFloat) Type() msg.Type       { return msg.TypeFloat }
 func (concreteFloat) IsNull() bool         { return false }
 func (cf concreteFloat) FloatVal() float64 { return float64(cf) }
@@ -130,12 +143,13 @@ func (concreteFloat) IntVal() int64                 { panic("wrong type") }
 func (concreteFloat) BoolVal() bool                 { panic("wrong type") }
 
 var (
-	_ msg.Msg  = concreteBool(true)
-	_ msg.Bool = concreteBool(false)
+	_ internalMsg = concreteBool(true)
+	_ msg.Bool    = concreteBool(false)
 )
 
 type concreteBool bool
 
+func (concreteBool) isGoMsg()         {}
 func (concreteBool) Type() msg.Type   { return msg.TypeBool }
 func (concreteBool) IsNull() bool     { return false }
 func (cb concreteBool) BoolVal() bool { return bool(cb) }

@@ -4,7 +4,7 @@ type Source func() (msg Msg, more bool, err error)
 type Sink func(Msg) error
 
 type Builder interface {
-	Convert(Msg) (Msg, error)
+	IsOwnType(Msg) bool
 
 	Object(func(ObjectBuilder) error) (Msg, error)
 	Array(func(ArrayBuilder) error) (Msg, error)
