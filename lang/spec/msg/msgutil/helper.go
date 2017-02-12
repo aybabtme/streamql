@@ -1,6 +1,10 @@
 package msgutil
 
-import "github.com/aybabtme/streamql/lang/spec/msg"
+import (
+	"fmt"
+
+	"github.com/aybabtme/streamql/lang/spec/msg"
+)
 
 // Convert takes a Msg and converts it to the type produced
 // by the given Builder. If the Msg is already of a type
@@ -112,12 +116,17 @@ func Reveal(in msg.Msg) (interface{}, error) {
 			outv := make([]interface{}, 0, int(n))
 			iter := val.Slice(0, n)
 			for {
-				v, more, err := iter()
+				el, more, err := iter()
 				if err != nil {
 					return err
 				}
 				if !more {
+					out = outv
 					return nil
+				}
+				v, err := Reveal(el)
+				if err != nil {
+					return err
 				}
 				outv = append(outv, v)
 			}
@@ -138,6 +147,10 @@ func Reveal(in msg.Msg) (interface{}, error) {
 			out = val.BoolVal()
 			return nil
 		}),
+		IfNull(func(val msg.Null) error {
+			out = nil
+			return nil
+		}),
 	)
 }
 
@@ -151,21 +164,21 @@ func Reveal(in msg.Msg) (interface{}, error) {
 func ConcreteType(in msg.Msg) interface{} {
 	switch in.Type() {
 	case msg.TypeObject:
-		return in.(msg.Object)
+		return scopedObject{in}
 	case msg.TypeArray:
-		return in.(msg.Array)
+		return scopedArray{in}
 	case msg.TypeString:
-		return in.(msg.String)
+		return scopedString{in}
 	case msg.TypeInt:
-		return in.(msg.Int)
+		return scopedInt{in}
 	case msg.TypeFloat:
-		return in.(msg.Float)
+		return scopedFloat{in}
 	case msg.TypeBool:
-		return in.(msg.Bool)
+		return scopedBool{in}
 	case msg.TypeNull:
-		return in.(msg.Null)
+		return scopedNull{in}
 	default:
-		panic("bug: unhandled type")
+		panic(fmt.Sprintf("bug: unhandled type: %v", in.Type()))
 	}
 }
 
@@ -187,7 +200,9 @@ func ActionOnConcreteType(in msg.Msg, actions ...actionOnType) error {
 		o(cb)
 	}
 
-	switch vt := ConcreteType(in).(type) {
+	v := ConcreteType(in)
+
+	switch vt := v.(type) {
 	case msg.Object:
 		return cb.ifObject(vt)
 	case msg.Array:
@@ -203,7 +218,7 @@ func ActionOnConcreteType(in msg.Msg, actions ...actionOnType) error {
 	case msg.Null:
 		return cb.ifNull(vt)
 	default:
-		panic("bug: unhandled type")
+		panic(fmt.Sprintf("bug: unhandled type: %#v", vt))
 	}
 }
 
@@ -253,3 +268,24 @@ func IfBool(action func(msg.Bool) error) actionOnType {
 func IfNull(action func(msg.Null) error) actionOnType {
 	return func(opts *actionOnTypeOpts) { opts.ifNull = action }
 }
+
+type (
+	scopedObject struct{ under msg.Object }
+	scopedArray  struct{ under msg.Array }
+	scopedString struct{ under msg.String }
+	scopedInt    struct{ under msg.Int }
+	scopedFloat  struct{ under msg.Float }
+	scopedBool   struct{ under msg.Msg }
+	scopedNull   struct{ under msg.Msg }
+)
+
+func (sc scopedObject) Member(m string) msg.Msg        { return sc.under.Member(m) }
+func (sc scopedObject) Keys() []string                 { return sc.under.Keys() }
+func (sc scopedArray) Slice(from, to int64) msg.Source { return sc.under.Slice(from, to) }
+func (sc scopedArray) Index(i int64) msg.Msg           { return sc.under.Index(i) }
+func (sc scopedArray) Len() int64                      { return sc.under.Len() }
+func (sc scopedString) StringVal() string              { return sc.under.StringVal() }
+func (sc scopedInt) IntVal() int64                     { return sc.under.IntVal() }
+func (sc scopedFloat) FloatVal() float64               { return sc.under.FloatVal() }
+func (sc scopedBool) BoolVal() bool                    { return sc.under.BoolVal() }
+func (sc scopedNull) IsNull() bool                     { return sc.under.IsNull() }

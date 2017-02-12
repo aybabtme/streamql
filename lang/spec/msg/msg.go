@@ -23,10 +23,12 @@ type ArrayBuilder interface {
 	AddElem(func(Builder) (Msg, error)) error
 }
 
+//go:generate stringer -type Type
+
 type Type uint16
 
 const (
-	TypeObject = iota
+	TypeObject Type = iota
 	TypeArray
 	TypeString
 	TypeInt
