@@ -535,9 +535,17 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 
 	var checkEq func(lhs, rhs msg.Msg) bool
 	checkEq = func(lhs, rhs msg.Msg) bool {
-		if lhs.Type() != rhs.Type() {
-			return false
+		switch {
+		case lhs.Type() == msg.TypeInt && rhs.Type() == msg.TypeFloat:
+			return float64(lhs.IntVal()) == rhs.FloatVal()
+		case lhs.Type() == msg.TypeFloat && rhs.Type() == msg.TypeInt:
+			return lhs.FloatVal() == float64(rhs.IntVal())
+		default:
+			if lhs.Type() != rhs.Type() {
+				return false
+			}
 		}
+
 		switch lhs.Type() {
 		case msg.TypeObject:
 			lhsKeys := lhs.Keys()
@@ -586,8 +594,16 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 
 	var checkLess func(lhs, rhs msg.Msg) (bool, error)
 	checkLess = func(lhs, rhs msg.Msg) (bool, error) {
-		if lhs.Type() != rhs.Type() {
-			return false, vm.skipEvalWrongType("comparison", rhs.Type(), lhs.Type())
+		switch {
+		case lhs.Type() == msg.TypeInt && rhs.Type() == msg.TypeFloat:
+			return float64(lhs.IntVal()) < rhs.FloatVal(), nil
+		case lhs.Type() == msg.TypeFloat && rhs.Type() == msg.TypeInt:
+			return lhs.FloatVal() < float64(rhs.IntVal()), nil
+		default:
+			if lhs.Type() != rhs.Type() {
+				return false, vm.skipEvalWrongType("comparison", rhs.Type(), lhs.Type())
+			}
+
 		}
 		switch lhs.Type() {
 		case msg.TypeString:
