@@ -30,11 +30,11 @@ func trace() func() {
 	pkgi := strings.Index(fn.Name()[lastSlash:], ".") + 1
 	name := fn.Name()[lastSlash+pkgi:]
 
-	log.Printf("%s<%s>", strings.Repeat(".", indent), name)
+	log.Printf("%s<%s>", strings.Repeat("|  ", indent), name)
 	indent++
 	return func() {
-		log.Printf("%s</%s>", strings.Repeat(".", indent), name)
 		indent--
+		log.Printf("%s</%s>", strings.Repeat("|  ", indent), name)
 	}
 }
 
@@ -77,7 +77,7 @@ func (vm *ASTInterpreter) skipEvalWrongType(action string, got msg.Type, want ..
 	defer trace()()
 	str := fmt.Sprintf("%s is not defined on %v (can be done on ", action, got)
 	if len(want) >= 1 {
-		str += fmt.Sprintf("%v", want[1])
+		str += fmt.Sprintf("%v", want[0])
 	}
 	for _, w := range want[1:] {
 		str += fmt.Sprintf(" or %v", w)
@@ -89,7 +89,7 @@ func (vm *ASTInterpreter) skipEvalWrongArgType(action string, target msg.Type, a
 	defer trace()()
 	str := fmt.Sprintf("%s by %v is not defined on %v (can be done by ", action, arg, target)
 	if len(want) >= 1 {
-		str += fmt.Sprintf("%v", want[1])
+		str += fmt.Sprintf("%v", want[0])
 	}
 	for _, w := range want[1:] {
 		str += fmt.Sprintf(" or %v", w)
@@ -105,10 +105,9 @@ func (vm *ASTInterpreter) skipEvalWrongArgValue(action string, arg msg.Type, pro
 func (vm *ASTInterpreter) evalExpr(build msg.Builder, m msg.Msg, expr *Expr, sink msg.Sink) error {
 	defer trace()()
 
-	log.Printf("expr=%#v", expr)
-
 	if expr.Next != nil {
-		sink = func(m msg.Msg) error { return vm.evalExpr(build, m, expr.Next, sink) }
+		oldSink := sink
+		sink = func(m msg.Msg) error { return vm.evalExpr(build, m, expr.Next, oldSink) }
 	}
 
 	switch {
@@ -180,7 +179,8 @@ func (vm *ASTInterpreter) evalSelector(build msg.Builder, m msg.Msg, s *Selector
 func (vm *ASTInterpreter) evalMemberSelector(build msg.Builder, m msg.Msg, sel *MemberSelector, sink msg.Sink) error {
 	defer trace()()
 	if sel.Child != nil {
-		sink = func(m msg.Msg) error { return vm.evalSelector(build, m, sel.Child, sink) }
+		oldSink := sink
+		sink = func(m msg.Msg) error { return vm.evalSelector(build, m, sel.Child, oldSink) }
 	}
 
 	// the meaning of an index depends on the type of message
@@ -212,11 +212,12 @@ func (vm *ASTInterpreter) evalMemberSelector(build msg.Builder, m msg.Msg, sel *
 func (vm *ASTInterpreter) evalSliceSelector(build msg.Builder, m msg.Msg, s *SliceSelector, sink msg.Sink) error {
 	defer trace()()
 	if s.Child != nil {
-		sink = func(m msg.Msg) error { return vm.evalSelector(build, m, s.Child, sink) }
+		oldSink := sink
+		sink = func(m msg.Msg) error { return vm.evalSelector(build, m, s.Child, oldSink) }
 	}
 
 	if m.Type() != msg.TypeArray {
-		return vm.skipEvalWrongType("index", m.Type(), msg.TypeObject, msg.TypeArray)
+		return vm.skipEvalWrongType("slice", m.Type(), msg.TypeObject, msg.TypeArray)
 	}
 
 	var (
