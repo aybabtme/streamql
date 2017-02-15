@@ -195,16 +195,32 @@ func emitSliceSelector(fromSym, toSym yySymType, subSelSym yySymType) yySymType 
 		child *Selector
 	)
 	switch fromSym.curID {
-	case Identifier:
-		from = &Expr{Literal: &Literal{String: &fromSym.cur.lit}}
+	case Int:
+		fromVal, err := strconv.ParseInt(fromSym.cur.lit, 10, 64)
+		if err != nil {
+			panic(err)
+		}
+		from = &Expr{Literal: &Literal{Int: &fromVal}}
 	default:
-		from = expr(fromSym)
+		if fromSym.node == implicitSliceIdx {
+			from = nil
+		} else {
+			from = expr(fromSym)
+		}
 	}
 	switch toSym.curID {
-	case Identifier:
-		to = &Expr{Literal: &Literal{String: &toSym.cur.lit}}
+	case Int:
+		toVal, err := strconv.ParseInt(toSym.cur.lit, 10, 64)
+		if err != nil {
+			panic(err)
+		}
+		to = &Expr{Literal: &Literal{Int: &toVal}}
 	default:
-		to = expr(toSym)
+		if toSym.node == implicitSliceIdx {
+			to = nil
+		} else {
+			to = expr(toSym)
+		}
 	}
 
 	if subSelSym.node != nil {

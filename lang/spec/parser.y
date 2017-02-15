@@ -4,8 +4,10 @@ package spec
 import (
     "io"
     // "fmt"
-    // "log"
 )
+
+var implicitSliceIdx = struct{}{}
+
 %}
 
 %token Dot
@@ -81,11 +83,15 @@ selector: Dot                                                       { $$ = emitN
         | Dot LeftBracket RightBracket sub_selector                 { $$ = emitSliceSelectorEach($4) }
         | Dot LeftBracket expr RightBracket sub_selector            { $$ = emitMemberSelector($3, $5) }
         | Dot LeftBracket expr Colon expr RightBracket sub_selector { $$ = emitSliceSelector($3, $5, $7)}
+        | Dot LeftBracket Colon expr RightBracket sub_selector      { $$ = emitSliceSelector(yySymType{node: implicitSliceIdx}, $4, $6)}
+        | Dot LeftBracket expr Colon RightBracket sub_selector      { $$ = emitSliceSelector($3, yySymType{node: implicitSliceIdx}, $6)}
         ;
 sub_selector: Dot Identifier sub_selector                           { $$ = emitMemberSelector($2, $3) }
             | LeftBracket RightBracket sub_selector                 { $$ = emitSliceSelectorEach($3) }
             | LeftBracket expr RightBracket sub_selector            { $$ = emitMemberSelector($2, $4) }
             | LeftBracket expr Colon expr RightBracket sub_selector { $$ = emitSliceSelector($2, $4, $6)}
+            | LeftBracket Colon expr RightBracket sub_selector      { $$ = emitSliceSelector(yySymType{node: implicitSliceIdx}, $3, $4)}
+            | LeftBracket expr Colon RightBracket sub_selector      { $$ = emitSliceSelector($2, yySymType{node: implicitSliceIdx}, $5)}
             | ;
 
 operator:      LogNot    expr               { $$ = emitOpNot($2)        }

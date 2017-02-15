@@ -3,17 +3,47 @@ package spec
 import (
 	"errors"
 	"fmt"
+	"log"
 	"sort"
 	"strconv"
 
+	"runtime"
+
+	"strings"
+
 	"github.com/aybabtme/streamql/lang/spec/msg"
 )
+
+var (
+	T      bool = true
+	indent int
+)
+
+func trace() func() {
+	if !T {
+		return func() {}
+	}
+	pc, _, _, _ := runtime.Caller(1)
+	fn := runtime.FuncForPC(pc)
+
+	lastSlash := strings.LastIndex(fn.Name(), "/") + 1
+	pkgi := strings.Index(fn.Name()[lastSlash:], ".") + 1
+	name := fn.Name()[lastSlash+pkgi:]
+
+	log.Printf("%s<%s>", strings.Repeat(".", indent), name)
+	indent++
+	return func() {
+		log.Printf("%s</%s>", strings.Repeat(".", indent), name)
+		indent--
+	}
+}
 
 type ASTInterpreter struct {
 	tree *AST
 }
 
 func (vm *ASTInterpreter) Run(build msg.Builder, src msg.Source, sink msg.Sink) error {
+	defer trace()()
 	if vm.tree.Expr == nil {
 		for {
 			msg, more, err := src()
@@ -44,6 +74,7 @@ func (vm *ASTInterpreter) Run(build msg.Builder, src msg.Source, sink msg.Sink) 
 }
 
 func (vm *ASTInterpreter) skipEvalWrongType(action string, got msg.Type, want ...msg.Type) error {
+	defer trace()()
 	str := fmt.Sprintf("%s is not defined on %v (can be done on ", action, got)
 	if len(want) >= 1 {
 		str += fmt.Sprintf("%v", want[1])
@@ -55,6 +86,7 @@ func (vm *ASTInterpreter) skipEvalWrongType(action string, got msg.Type, want ..
 }
 
 func (vm *ASTInterpreter) skipEvalWrongArgType(action string, target msg.Type, arg msg.Type, want ...msg.Type) error {
+	defer trace()()
 	str := fmt.Sprintf("%s by %v is not defined on %v (can be done by ", action, arg, target)
 	if len(want) >= 1 {
 		str += fmt.Sprintf("%v", want[1])
@@ -66,10 +98,14 @@ func (vm *ASTInterpreter) skipEvalWrongArgType(action string, target msg.Type, a
 }
 
 func (vm *ASTInterpreter) skipEvalWrongArgValue(action string, arg msg.Type, problem string) error {
+	defer trace()()
 	return fmt.Errorf("%s with given %v is impossible: %s", action, arg, problem)
 }
 
 func (vm *ASTInterpreter) evalExpr(build msg.Builder, m msg.Msg, expr *Expr, sink msg.Sink) error {
+	defer trace()()
+
+	log.Printf("expr=%#v", expr)
 
 	if expr.Next != nil {
 		sink = func(m msg.Msg) error { return vm.evalExpr(build, m, expr.Next, sink) }
@@ -90,6 +126,7 @@ func (vm *ASTInterpreter) evalExpr(build msg.Builder, m msg.Msg, expr *Expr, sin
 }
 
 func (vm *ASTInterpreter) evalLiteral(build msg.Builder, m msg.Msg, l *Literal, sink msg.Sink) error {
+	defer trace()()
 	switch {
 	case l.Bool != nil:
 		v, err := build.Bool(*l.Bool)
@@ -127,6 +164,7 @@ func (vm *ASTInterpreter) evalLiteral(build msg.Builder, m msg.Msg, l *Literal, 
 }
 
 func (vm *ASTInterpreter) evalSelector(build msg.Builder, m msg.Msg, s *Selector, sink msg.Sink) error {
+	defer trace()()
 	switch {
 	case s.Member != nil:
 		return vm.evalMemberSelector(build, m, s.Member, sink)
@@ -140,6 +178,7 @@ func (vm *ASTInterpreter) evalSelector(build msg.Builder, m msg.Msg, s *Selector
 }
 
 func (vm *ASTInterpreter) evalMemberSelector(build msg.Builder, m msg.Msg, sel *MemberSelector, sink msg.Sink) error {
+	defer trace()()
 	if sel.Child != nil {
 		sink = func(m msg.Msg) error { return vm.evalSelector(build, m, sel.Child, sink) }
 	}
@@ -171,6 +210,7 @@ func (vm *ASTInterpreter) evalMemberSelector(build msg.Builder, m msg.Msg, sel *
 }
 
 func (vm *ASTInterpreter) evalSliceSelector(build msg.Builder, m msg.Msg, s *SliceSelector, sink msg.Sink) error {
+	defer trace()()
 	if s.Child != nil {
 		sink = func(m msg.Msg) error { return vm.evalSelector(build, m, s.Child, sink) }
 	}
@@ -179,16 +219,38 @@ func (vm *ASTInterpreter) evalSliceSelector(build msg.Builder, m msg.Msg, s *Sli
 		return vm.skipEvalWrongType("index", m.Type(), msg.TypeObject, msg.TypeArray)
 	}
 
-	from, err := vm.evalExprToMsgType(build, m, s.From, "slice from", msg.TypeInt)
-	if err != nil {
-		return err
+	var (
+		n    = m.Len()
+		from = int64(0)
+		to   = n
+	)
+
+	if s.From != nil {
+		fromMsg, err := vm.evalExprToMsgType(build, m, s.From, "slice from", msg.TypeInt)
+		if err != nil {
+			return err
+		}
+		from = fromMsg.IntVal()
 	}
-	to, err := vm.evalExprToMsgType(build, m, s.To, "slice to", msg.TypeInt)
-	if err != nil {
-		return err
+	if s.To != nil {
+		toMsg, err := vm.evalExprToMsgType(build, m, s.To, "slice to", msg.TypeInt)
+		if err != nil {
+			return err
+		}
+		to = toMsg.IntVal()
 	}
 
-	src := m.Slice(from.IntVal(), to.IntVal())
+	if from >= n {
+		return nil
+	}
+	if to > n {
+		to = n
+	}
+	if to-from <= 0 {
+		return nil
+	}
+
+	src := m.Slice(from, to)
 	for {
 		msg, more, err := src()
 		if err != nil {
@@ -204,6 +266,7 @@ func (vm *ASTInterpreter) evalSliceSelector(build msg.Builder, m msg.Msg, s *Sli
 }
 
 func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator, sink msg.Sink) error {
+	defer trace()()
 
 	// bool operators
 	switch {
@@ -652,6 +715,7 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 }
 
 func (vm *ASTInterpreter) evalFuncCall(build msg.Builder, m msg.Msg, f *FuncCall, sink msg.Sink) error {
+	defer trace()()
 	arity, fn := vm.lookupFuncs(f.Name)
 	if fn == nil {
 		return fmt.Errorf("unknown function %q", f.Name)
@@ -665,6 +729,7 @@ func (vm *ASTInterpreter) evalFuncCall(build msg.Builder, m msg.Msg, f *FuncCall
 type evalFunc func(build msg.Builder, m msg.Msg, args []*Expr, sink msg.Sink) error
 
 func (vm *ASTInterpreter) lookupFuncs(name string) (int, evalFunc) {
+	defer trace()()
 	switch name {
 	case "select":
 		return 1, vm.evalFuncSelect
@@ -675,11 +740,12 @@ func (vm *ASTInterpreter) lookupFuncs(name string) (int, evalFunc) {
 // == select(bool) -> msg.Msg ==
 // Emits the current message if the given expression evaluates to true.
 func (vm *ASTInterpreter) evalFuncSelect(build msg.Builder, m msg.Msg, args []*Expr, sink msg.Sink) error {
+	defer trace()()
 	cond, err := vm.evalExprToMsgType(build, m, args[0], "function select", msg.TypeBool)
 	if err != nil {
 		return err
 	}
-	if !cond.BoolVal() {
+	if cond.BoolVal() {
 		return sink(m)
 	}
 	return nil
@@ -689,6 +755,7 @@ func (vm *ASTInterpreter) evalFuncSelect(build msg.Builder, m msg.Msg, args []*E
 
 // evalExprToMsg evaluates an expression's result and verifies that it is of the requested type.
 func (vm *ASTInterpreter) evalExprToMsg(build msg.Builder, m msg.Msg, expr *Expr) (msg.Msg, error) {
+	defer trace()()
 	var evaled msg.Msg
 	err := vm.evalExpr(build, m, expr, func(got msg.Msg) error {
 		evaled = got
@@ -700,6 +767,7 @@ func (vm *ASTInterpreter) evalExprToMsg(build msg.Builder, m msg.Msg, expr *Expr
 
 // evalExprToMsgType evaluates an expression's result and verifies that it is of the requested type.
 func (vm *ASTInterpreter) evalExprToMsgType(build msg.Builder, m msg.Msg, expr *Expr, action string, want ...msg.Type) (msg.Msg, error) {
+	defer trace()()
 	var evaled msg.Msg
 	err := vm.evalExpr(build, m, expr, func(got msg.Msg) error {
 		for _, w := range want {

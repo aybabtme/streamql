@@ -68,9 +68,10 @@ func (ca concreteArr) IsNull() bool           { return ca.elems == nil }
 func (ca *concreteArr) Len() int64            { return int64(len(ca.elems)) }
 func (ca *concreteArr) Index(i int64) msg.Msg { return ca.elems[i] }
 func (ca *concreteArr) Slice(from, to int64) msg.Source {
-	i := int(from)
+	i := from
+	n := to
 	return func() (msg.Msg, bool, error) {
-		if i >= len(ca.elems) {
+		if i >= n {
 			return nil, false, nil
 		}
 		i++

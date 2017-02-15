@@ -544,6 +544,11 @@ func TestParse(t *testing.T) {
 			),
 		)},
 
+		{args: "select(.)", want: ast(
+			exprFn(fn("select", exprSel(
+				selNoop(),
+			))),
+		)},
 		{args: "select(.size > 1)", want: ast(
 			exprFn(fn("select", exprOp(
 				opGt(

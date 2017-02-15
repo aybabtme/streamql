@@ -7,10 +7,11 @@ import __yyfmt__ "fmt"
 import (
 	"io"
 	// "fmt"
-	// "log"
 )
 
-//line parser.y:53
+var implicitSliceIdx = struct{}{}
+
+//line parser.y:55
 type yySymType struct {
 	yys  int
 	node interface{}
@@ -86,7 +87,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyInitialStackSize = 16
 
-//line parser.y:113
+//line parser.y:119
 
 func cast(y yyLexer) *AST { return y.(*Lexer).parseResult.(*AST) }
 
@@ -111,102 +112,115 @@ var yyExca = [...]int{
 	-1, 42,
 	21, 0,
 	22, 0,
-	-2, 30,
+	-2, 34,
 	-1, 43,
 	21, 0,
 	22, 0,
-	-2, 31,
+	-2, 35,
 	-1, 44,
 	23, 0,
 	24, 0,
 	25, 0,
 	26, 0,
-	-2, 32,
+	-2, 36,
 	-1, 45,
 	23, 0,
 	24, 0,
 	25, 0,
 	26, 0,
-	-2, 33,
+	-2, 37,
 	-1, 46,
 	23, 0,
 	24, 0,
 	25, 0,
 	26, 0,
-	-2, 34,
+	-2, 38,
 	-1, 47,
 	23, 0,
 	24, 0,
 	25, 0,
 	26, 0,
-	-2, 35,
+	-2, 39,
 }
 
-const yyNprod = 40
+const yyNprod = 44
 const yyPrivate = 57344
 
 var yyTokenNames []string
 var yyStates []string
 
-const yyLast = 257
+const yyLast = 359
 
 var yyAct = [...]int{
 
-	55, 2, 48, 54, 23, 24, 25, 26, 27, 28,
-	19, 20, 22, 21, 31, 33, 21, 35, 36, 37,
-	38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
-	16, 52, 19, 20, 22, 21, 22, 21, 18, 17,
-	56, 23, 24, 25, 26, 27, 28, 19, 20, 22,
-	21, 58, 30, 62, 59, 20, 22, 21, 53, 64,
-	65, 29, 69, 68, 5, 34, 6, 70, 72, 71,
-	66, 49, 50, 67, 16, 4, 75, 76, 3, 32,
-	1, 0, 18, 17, 0, 23, 24, 25, 26, 27,
-	28, 19, 20, 22, 21, 60, 0, 0, 61, 16,
-	0, 0, 0, 0, 0, 0, 0, 18, 17, 0,
-	23, 24, 25, 26, 27, 28, 19, 20, 22, 21,
-	74, 0, 0, 0, 16, 0, 0, 0, 0, 0,
+	48, 55, 21, 56, 2, 17, 57, 23, 24, 25,
+	26, 27, 28, 19, 20, 22, 21, 31, 33, 65,
+	35, 36, 37, 38, 39, 40, 41, 42, 43, 44,
+	45, 46, 47, 54, 52, 23, 24, 25, 26, 27,
+	28, 19, 20, 22, 21, 19, 20, 22, 21, 20,
+	22, 21, 61, 30, 59, 22, 21, 64, 67, 68,
+	34, 6, 29, 72, 71, 49, 50, 73, 76, 5,
+	77, 4, 3, 1, 78, 82, 83, 0, 0, 0,
+	85, 86, 87, 69, 32, 88, 70, 16, 0, 0,
+	0, 0, 0, 0, 0, 18, 17, 0, 23, 24,
+	25, 26, 27, 28, 19, 20, 22, 21, 62, 0,
+	0, 63, 16, 0, 0, 0, 0, 0, 0, 0,
+	18, 17, 0, 23, 24, 25, 26, 27, 28, 19,
+	20, 22, 21, 84, 0, 0, 0, 16, 0, 0,
+	0, 0, 0, 0, 0, 18, 17, 0, 23, 24,
+	25, 26, 27, 28, 19, 20, 22, 21, 81, 0,
+	0, 0, 16, 0, 0, 0, 0, 0, 0, 0,
+	18, 17, 0, 23, 24, 25, 26, 27, 28, 19,
+	20, 22, 21, 80, 0, 0, 0, 16, 0, 0,
+	0, 0, 0, 0, 0, 18, 17, 0, 23, 24,
+	25, 26, 27, 28, 19, 20, 22, 21, 75, 0,
+	0, 0, 16, 0, 0, 0, 0, 0, 0, 0,
+	18, 17, 0, 23, 24, 25, 26, 27, 28, 19,
+	20, 22, 21, 16, 66, 0, 0, 0, 0, 0,
+	0, 18, 17, 0, 23, 24, 25, 26, 27, 28,
+	19, 20, 22, 21, 16, 0, 0, 0, 0, 0,
 	0, 0, 18, 17, 0, 23, 24, 25, 26, 27,
-	28, 19, 20, 22, 21, 73, 0, 0, 0, 16,
-	0, 0, 0, 0, 0, 0, 0, 18, 17, 0,
-	23, 24, 25, 26, 27, 28, 19, 20, 22, 21,
-	16, 63, 0, 0, 0, 0, 0, 0, 18, 17,
-	0, 23, 24, 25, 26, 27, 28, 19, 20, 22,
-	21, 17, 0, 23, 24, 25, 26, 27, 28, 19,
-	20, 22, 21, 25, 26, 27, 28, 19, 20, 22,
-	21, 12, 0, 57, 14, 0, 0, 0, 0, 11,
-	7, 15, 8, 9, 10, 0, 12, 13, 51, 14,
-	0, 0, 0, 0, 11, 7, 15, 8, 9, 10,
-	12, 0, 13, 14, 0, 0, 0, 0, 11, 7,
-	15, 8, 9, 10, 0, 0, 13,
+	28, 19, 20, 22, 21, 25, 26, 27, 28, 19,
+	20, 22, 21, 12, 0, 58, 14, 0, 60, 0,
+	0, 11, 7, 15, 8, 9, 10, 0, 12, 13,
+	51, 14, 0, 53, 0, 0, 11, 7, 15, 8,
+	9, 10, 0, 12, 13, 79, 14, 0, 0, 0,
+	0, 11, 7, 15, 8, 9, 10, 0, 12, 13,
+	74, 14, 0, 0, 0, 0, 11, 7, 15, 8,
+	9, 10, 12, 0, 13, 14, 0, 0, 0, 0,
+	11, 7, 15, 8, 9, 10, 0, 0, 13,
 }
 var yyPact = [...]int{
 
-	236, -1000, 20, -1000, -1000, -1000, -1000, -1000, -1000, -1000,
-	-1000, -1000, 47, 236, 236, 58, 236, 236, 236, 236,
-	236, 236, 236, 236, 236, 236, 236, 236, 236, 67,
-	222, -17, 50, 20, 236, 20, -17, 172, 27, 7,
-	-1000, -14, 180, 180, 5, 5, 5, 5, -1000, 26,
-	207, 67, 89, -1000, 45, 160, 67, 67, 64, -1000,
-	67, 236, -1000, 236, -1000, -1000, 67, 236, -1000, 139,
-	-1000, -1000, 114, 67, 67, -1000, -1000,
+	338, -1000, 244, -1000, -1000, -1000, -1000, -1000, -1000, -1000,
+	-1000, -1000, 48, 338, 338, 53, 338, 338, 338, 338,
+	338, 338, 338, 338, 338, 338, 338, 338, 338, 61,
+	294, 14, 25, 244, 338, 244, 14, -14, 21, 26,
+	-1000, -28, 252, 252, 18, 18, 18, 18, -1000, -8,
+	279, 61, 102, 338, -1000, 11, 223, 61, 61, 77,
+	338, -1000, 61, 324, 202, -1000, 338, -1000, -1000, 61,
+	309, 177, -1000, 152, 61, 61, -1000, -1000, 127, 61,
+	61, 61, -1000, -1000, 61, -1000, -1000, -1000, -1000,
 }
 var yyPgo = [...]int{
 
-	0, 80, 0, 78, 75, 64, 66, 2, 3,
+	0, 73, 3, 72, 71, 69, 61, 0, 1,
 }
 var yyR1 = [...]int{
 
 	0, 1, 1, 2, 2, 2, 2, 2, 3, 3,
-	3, 3, 3, 4, 4, 4, 4, 4, 7, 7,
-	7, 7, 7, 5, 5, 5, 5, 5, 5, 5,
-	5, 5, 5, 5, 5, 5, 5, 6, 8, 8,
+	3, 3, 3, 4, 4, 4, 4, 4, 4, 4,
+	7, 7, 7, 7, 7, 7, 7, 5, 5, 5,
+	5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+	5, 6, 8, 8,
 }
 var yyR2 = [...]int{
 
 	0, 1, 0, 1, 1, 1, 1, 3, 1, 1,
-	1, 1, 1, 1, 3, 4, 5, 7, 3, 3,
-	4, 6, 0, 2, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 4, 1, 3,
+	1, 1, 1, 1, 3, 4, 5, 7, 6, 6,
+	3, 3, 4, 6, 5, 5, 0, 2, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 4, 1, 3,
 }
 var yyChk = [...]int{
 
@@ -215,20 +229,22 @@ var yyChk = [...]int{
 	28, 30, 29, 21, 22, 23, 24, 25, 26, 14,
 	5, -2, -5, -2, 7, -2, -2, -2, -2, -2,
 	-2, -2, -2, -2, -2, -2, -2, -2, -7, 4,
-	5, 6, -2, 8, -8, -2, 14, 6, -2, -7,
-	6, 9, 8, 11, -7, -7, 6, 9, -7, -2,
-	-8, -7, -2, 6, 6, -7, -7,
+	5, 6, -2, 9, 8, -8, -2, 14, 6, -2,
+	9, -7, 6, 9, -2, 8, 11, -7, -7, 6,
+	9, -2, -7, -2, 6, 6, -8, -7, -2, 6,
+	6, 6, -7, -7, 6, -7, -7, -7, -7,
 }
 var yyDef = [...]int{
 
 	2, -2, 1, 3, 4, 5, 6, 8, 9, 10,
 	11, 12, 13, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 22,
-	0, 23, 5, 0, 0, 7, 24, 25, 26, 27,
-	28, 29, -2, -2, -2, -2, -2, -2, 14, 0,
-	0, 22, 0, 36, 0, 38, 22, 22, 0, 15,
-	22, 0, 37, 0, 18, 19, 22, 0, 16, 0,
-	39, 20, 0, 22, 22, 17, 21,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 26,
+	0, 27, 5, 0, 0, 7, 28, 29, 30, 31,
+	32, 33, -2, -2, -2, -2, -2, -2, 14, 0,
+	0, 26, 0, 0, 40, 0, 42, 26, 26, 0,
+	0, 15, 26, 0, 0, 41, 0, 20, 21, 26,
+	0, 0, 16, 0, 26, 26, 43, 22, 0, 26,
+	26, 26, 19, 18, 26, 25, 24, 17, 23,
 }
 var yyTok1 = [...]int{
 
@@ -583,223 +599,247 @@ yydefault:
 
 	case 1:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line parser.y:62
+		//line parser.y:64
 		{
 			cast(yylex).Expr = expr(yyDollar[1])
 		}
 	case 3:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line parser.y:65
+		//line parser.y:67
 		{
 			yyVAL = literal(yyDollar[1])
 		}
 	case 4:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line parser.y:66
+		//line parser.y:68
 		{
 			yyVAL = selector(yyDollar[1])
 		}
 	case 5:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line parser.y:67
+		//line parser.y:69
 		{
 			yyVAL = operator(yyDollar[1])
 		}
 	case 6:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line parser.y:68
+		//line parser.y:70
 		{
 			yyVAL = funcCall(yyDollar[1])
 		}
 	case 7:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line parser.y:69
+		//line parser.y:71
 		{
 			yyVAL = pipe(yyDollar[1], yyDollar[3])
 		}
 	case 8:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line parser.y:72
+		//line parser.y:74
 		{
 			yyVAL = emitBool(yyDollar[1])
 		}
 	case 9:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line parser.y:73
+		//line parser.y:75
 		{
 			yyVAL = emitString(yyDollar[1])
 		}
 	case 10:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line parser.y:74
+		//line parser.y:76
 		{
 			yyVAL = emitInt(yyDollar[1])
 		}
 	case 11:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line parser.y:75
+		//line parser.y:77
 		{
 			yyVAL = emitFloat(yyDollar[1])
 		}
 	case 12:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line parser.y:76
+		//line parser.y:78
 		{
 			yyVAL = emitNull(yyDollar[1])
 		}
 	case 13:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line parser.y:79
+		//line parser.y:81
 		{
 			yyVAL = emitNopSelector()
 		}
 	case 14:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line parser.y:80
+		//line parser.y:82
 		{
 			yyVAL = emitMemberSelector(yyDollar[2], yyDollar[3])
 		}
 	case 15:
 		yyDollar = yyS[yypt-4 : yypt+1]
-		//line parser.y:81
+		//line parser.y:83
 		{
 			yyVAL = emitSliceSelectorEach(yyDollar[4])
 		}
 	case 16:
 		yyDollar = yyS[yypt-5 : yypt+1]
-		//line parser.y:82
+		//line parser.y:84
 		{
 			yyVAL = emitMemberSelector(yyDollar[3], yyDollar[5])
 		}
 	case 17:
 		yyDollar = yyS[yypt-7 : yypt+1]
-		//line parser.y:83
+		//line parser.y:85
 		{
 			yyVAL = emitSliceSelector(yyDollar[3], yyDollar[5], yyDollar[7])
 		}
 	case 18:
+		yyDollar = yyS[yypt-6 : yypt+1]
+		//line parser.y:86
+		{
+			yyVAL = emitSliceSelector(yySymType{node: implicitSliceIdx}, yyDollar[4], yyDollar[6])
+		}
+	case 19:
+		yyDollar = yyS[yypt-6 : yypt+1]
+		//line parser.y:87
+		{
+			yyVAL = emitSliceSelector(yyDollar[3], yySymType{node: implicitSliceIdx}, yyDollar[6])
+		}
+	case 20:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line parser.y:85
+		//line parser.y:89
 		{
 			yyVAL = emitMemberSelector(yyDollar[2], yyDollar[3])
 		}
-	case 19:
+	case 21:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line parser.y:86
+		//line parser.y:90
 		{
 			yyVAL = emitSliceSelectorEach(yyDollar[3])
 		}
-	case 20:
+	case 22:
 		yyDollar = yyS[yypt-4 : yypt+1]
-		//line parser.y:87
+		//line parser.y:91
 		{
 			yyVAL = emitMemberSelector(yyDollar[2], yyDollar[4])
 		}
-	case 21:
+	case 23:
 		yyDollar = yyS[yypt-6 : yypt+1]
-		//line parser.y:88
+		//line parser.y:92
 		{
 			yyVAL = emitSliceSelector(yyDollar[2], yyDollar[4], yyDollar[6])
 		}
-	case 23:
+	case 24:
+		yyDollar = yyS[yypt-5 : yypt+1]
+		//line parser.y:93
+		{
+			yyVAL = emitSliceSelector(yySymType{node: implicitSliceIdx}, yyDollar[3], yyDollar[4])
+		}
+	case 25:
+		yyDollar = yyS[yypt-5 : yypt+1]
+		//line parser.y:94
+		{
+			yyVAL = emitSliceSelector(yyDollar[2], yySymType{node: implicitSliceIdx}, yyDollar[5])
+		}
+	case 27:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line parser.y:91
+		//line parser.y:97
 		{
 			yyVAL = emitOpNot(yyDollar[2])
 		}
-	case 24:
-		yyDollar = yyS[yypt-3 : yypt+1]
-		//line parser.y:92
-		{
-			yyVAL = emitOpAnd(yyDollar[1], yyDollar[3])
-		}
-	case 25:
-		yyDollar = yyS[yypt-3 : yypt+1]
-		//line parser.y:93
-		{
-			yyVAL = emitOpOr(yyDollar[1], yyDollar[3])
-		}
-	case 26:
-		yyDollar = yyS[yypt-3 : yypt+1]
-		//line parser.y:94
-		{
-			yyVAL = emitOpAdd(yyDollar[1], yyDollar[3])
-		}
-	case 27:
-		yyDollar = yyS[yypt-3 : yypt+1]
-		//line parser.y:95
-		{
-			yyVAL = emitOpSub(yyDollar[1], yyDollar[3])
-		}
 	case 28:
-		yyDollar = yyS[yypt-3 : yypt+1]
-		//line parser.y:96
-		{
-			yyVAL = emitOpDiv(yyDollar[1], yyDollar[3])
-		}
-	case 29:
-		yyDollar = yyS[yypt-3 : yypt+1]
-		//line parser.y:97
-		{
-			yyVAL = emitOpMul(yyDollar[1], yyDollar[3])
-		}
-	case 30:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		//line parser.y:98
 		{
-			yyVAL = emitOpEq(yyDollar[1], yyDollar[3])
+			yyVAL = emitOpAnd(yyDollar[1], yyDollar[3])
 		}
-	case 31:
+	case 29:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		//line parser.y:99
 		{
-			yyVAL = emitOpNotEq(yyDollar[1], yyDollar[3])
+			yyVAL = emitOpOr(yyDollar[1], yyDollar[3])
 		}
-	case 32:
+	case 30:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		//line parser.y:100
 		{
-			yyVAL = emitOpGt(yyDollar[1], yyDollar[3])
+			yyVAL = emitOpAdd(yyDollar[1], yyDollar[3])
 		}
-	case 33:
+	case 31:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		//line parser.y:101
 		{
-			yyVAL = emitOpGtOrEq(yyDollar[1], yyDollar[3])
+			yyVAL = emitOpSub(yyDollar[1], yyDollar[3])
 		}
-	case 34:
+	case 32:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		//line parser.y:102
 		{
-			yyVAL = emitOpLs(yyDollar[1], yyDollar[3])
+			yyVAL = emitOpDiv(yyDollar[1], yyDollar[3])
 		}
-	case 35:
+	case 33:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		//line parser.y:103
 		{
-			yyVAL = emitOpLsOrEq(yyDollar[1], yyDollar[3])
+			yyVAL = emitOpMul(yyDollar[1], yyDollar[3])
 		}
-	case 36:
+	case 34:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		//line parser.y:104
 		{
-			yyVAL = yyDollar[2]
+			yyVAL = emitOpEq(yyDollar[1], yyDollar[3])
+		}
+	case 35:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		//line parser.y:105
+		{
+			yyVAL = emitOpNotEq(yyDollar[1], yyDollar[3])
+		}
+	case 36:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		//line parser.y:106
+		{
+			yyVAL = emitOpGt(yyDollar[1], yyDollar[3])
 		}
 	case 37:
-		yyDollar = yyS[yypt-4 : yypt+1]
+		yyDollar = yyS[yypt-3 : yypt+1]
 		//line parser.y:107
 		{
-			yyVAL = emitFuncCall(yyDollar[1], yyDollar[3])
+			yyVAL = emitOpGtOrEq(yyDollar[1], yyDollar[3])
 		}
 	case 38:
-		yyDollar = yyS[yypt-1 : yypt+1]
-		//line parser.y:109
+		yyDollar = yyS[yypt-3 : yypt+1]
+		//line parser.y:108
 		{
-			yyVAL = emitArg(yyDollar[1])
+			yyVAL = emitOpLs(yyDollar[1], yyDollar[3])
 		}
 	case 39:
 		yyDollar = yyS[yypt-3 : yypt+1]
+		//line parser.y:109
+		{
+			yyVAL = emitOpLsOrEq(yyDollar[1], yyDollar[3])
+		}
+	case 40:
+		yyDollar = yyS[yypt-3 : yypt+1]
 		//line parser.y:110
+		{
+			yyVAL = yyDollar[2]
+		}
+	case 41:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		//line parser.y:113
+		{
+			yyVAL = emitFuncCall(yyDollar[1], yyDollar[3])
+		}
+	case 42:
+		yyDollar = yyS[yypt-1 : yypt+1]
+		//line parser.y:115
+		{
+			yyVAL = emitArg(yyDollar[1])
+		}
+	case 43:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		//line parser.y:116
 		{
 			yyVAL = emitArgs(yyDollar[1], yyDollar[3])
 		}
