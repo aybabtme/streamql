@@ -18,7 +18,7 @@ type concreteNull struct{}
 
 func (concreteNull) isGoMsg()                      {}
 func (concreteNull) Type() msg.Type                { return msg.TypeNull }
-func (concreteNull) Member(string) msg.Msg         { panic("undefined on Null") }
+func (concreteNull) Member(string) (msg.Msg, bool) { panic("undefined on Null") }
 func (concreteNull) Keys() []string                { panic("undefined on Null") }
 func (concreteNull) Slice(int64, int64) msg.Source { panic("undefined on Null") }
 func (concreteNull) Index(int64) msg.Msg           { panic("undefined on Null") }
@@ -39,11 +39,11 @@ type concreteObj struct {
 	members map[string]msg.Msg
 }
 
-func (concreteObj) isGoMsg()                    {}
-func (co *concreteObj) Type() msg.Type          { return msg.TypeObject }
-func (co *concreteObj) IsNull() bool            { return co.members == nil }
-func (co *concreteObj) Keys() []string          { return co.keys }
-func (co *concreteObj) Member(v string) msg.Msg { return co.members[v] }
+func (concreteObj) isGoMsg()                            {}
+func (co *concreteObj) Type() msg.Type                  { return msg.TypeObject }
+func (co *concreteObj) IsNull() bool                    { return co.members == nil }
+func (co *concreteObj) Keys() []string                  { return co.keys }
+func (co *concreteObj) Member(k string) (msg.Msg, bool) { v, ok := co.members[k]; return v, ok }
 
 func (concreteObj) Slice(int64, int64) msg.Source { panic("undefined on Object") }
 func (concreteObj) Index(int64) msg.Msg           { panic("undefined on Object") }
@@ -79,12 +79,12 @@ func (ca *concreteArr) Slice(from, to int64) msg.Source {
 	}
 }
 
-func (concreteArr) Member(string) msg.Msg { panic("undefined on Array") }
-func (concreteArr) Keys() []string        { panic("undefined on Array") }
-func (concreteArr) StringVal() string     { panic("undefined on Array") }
-func (concreteArr) IntVal() int64         { panic("undefined on Array") }
-func (concreteArr) FloatVal() float64     { panic("undefined on Array") }
-func (concreteArr) BoolVal() bool         { panic("undefined on Array") }
+func (concreteArr) Member(string) (msg.Msg, bool) { panic("undefined on Array") }
+func (concreteArr) Keys() []string                { panic("undefined on Array") }
+func (concreteArr) StringVal() string             { panic("undefined on Array") }
+func (concreteArr) IntVal() int64                 { panic("undefined on Array") }
+func (concreteArr) FloatVal() float64             { panic("undefined on Array") }
+func (concreteArr) BoolVal() bool                 { panic("undefined on Array") }
 
 var (
 	_ internalMsg = concreteStr("hello")
@@ -98,7 +98,7 @@ func (concreteStr) Type() msg.Type       { return msg.TypeString }
 func (concreteStr) IsNull() bool         { return false }
 func (cs concreteStr) StringVal() string { return string(cs) }
 
-func (concreteStr) Member(string) msg.Msg         { panic("undefined on String") }
+func (concreteStr) Member(string) (msg.Msg, bool) { panic("undefined on String") }
 func (concreteStr) Keys() []string                { panic("undefined on String") }
 func (concreteStr) Slice(int64, int64) msg.Source { panic("undefined on String") }
 func (concreteStr) Index(int64) msg.Msg           { panic("undefined on String") }
@@ -119,7 +119,7 @@ func (concreteInt) Type() msg.Type   { return msg.TypeInt }
 func (concreteInt) IsNull() bool     { return false }
 func (ci concreteInt) IntVal() int64 { return int64(ci) }
 
-func (concreteInt) Member(string) msg.Msg         { panic("undefined on Int") }
+func (concreteInt) Member(string) (msg.Msg, bool) { panic("undefined on Int") }
 func (concreteInt) Keys() []string                { panic("undefined on Int") }
 func (concreteInt) Slice(int64, int64) msg.Source { panic("undefined on Int") }
 func (concreteInt) Index(int64) msg.Msg           { panic("undefined on Int") }
@@ -140,7 +140,7 @@ func (concreteFloat) Type() msg.Type       { return msg.TypeFloat }
 func (concreteFloat) IsNull() bool         { return false }
 func (cf concreteFloat) FloatVal() float64 { return float64(cf) }
 
-func (concreteFloat) Member(string) msg.Msg         { panic("undefined on Float") }
+func (concreteFloat) Member(string) (msg.Msg, bool) { panic("undefined on Float") }
 func (concreteFloat) Keys() []string                { panic("undefined on Float") }
 func (concreteFloat) Slice(int64, int64) msg.Source { panic("undefined on Float") }
 func (concreteFloat) Index(int64) msg.Msg           { panic("undefined on Float") }
@@ -161,7 +161,7 @@ func (concreteBool) Type() msg.Type   { return msg.TypeBool }
 func (concreteBool) IsNull() bool     { return false }
 func (cb concreteBool) BoolVal() bool { return bool(cb) }
 
-func (concreteBool) Member(string) msg.Msg         { panic("undefined on Bool") }
+func (concreteBool) Member(string) (msg.Msg, bool) { panic("undefined on Bool") }
 func (concreteBool) Keys() []string                { panic("undefined on Bool") }
 func (concreteBool) Slice(int64, int64) msg.Source { panic("undefined on Bool") }
 func (concreteBool) Index(int64) msg.Msg           { panic("undefined on Bool") }

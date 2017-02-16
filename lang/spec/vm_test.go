@@ -211,6 +211,10 @@ func TestVM(t *testing.T) {
 						"world": mustFloat(bd, 3.14159),
 					}),
 				}),
+				mustObject(bd, map[string]msg.Msg{}),
+				mustObject(bd, map[string]msg.Msg{
+					"hello": mustObject(bd, map[string]msg.Msg{}),
+				}),
 			),
 			".hello.world",
 			list(
@@ -233,6 +237,54 @@ func TestVM(t *testing.T) {
 			".hello.world | select(. > 4.0)",
 			list(
 				mustFloat(bd, 2*3.14159),
+			),
+		},
+		{"select into an object",
+			list(
+				mustObject(bd, map[string]msg.Msg{
+					"keep": mustBool(bd, true),
+					"name": mustString(bd, "item0"),
+				}),
+				mustObject(bd, map[string]msg.Msg{
+					"keep": mustBool(bd, false),
+					"name": mustString(bd, "item1"),
+				}),
+				mustObject(bd, map[string]msg.Msg{
+					"keep": mustBool(bd, true),
+					"name": mustString(bd, "item2"),
+				}),
+			),
+			"select(.keep) | .name",
+			list(
+				mustString(bd, "item0"),
+				mustString(bd, "item2"),
+			),
+		},
+		{"select recursively into an object",
+			list(
+				mustObject(bd, map[string]msg.Msg{
+					"cond": mustObject(bd, map[string]msg.Msg{
+						"keep": mustBool(bd, true),
+					}),
+					"name": mustString(bd, "item0"),
+				}),
+				mustObject(bd, map[string]msg.Msg{
+					"cond": mustObject(bd, map[string]msg.Msg{
+						"keep": mustBool(bd, false),
+					}),
+					"name": mustString(bd, "item1"),
+				}),
+				mustObject(bd, map[string]msg.Msg{
+					"cond": mustObject(bd, map[string]msg.Msg{
+						"keep": mustBool(bd, true),
+					}),
+					"name": mustString(bd, "item2"),
+				}),
+			),
+			"select(.cond.keep) | .name",
+			list(
+				mustString(bd, "item0"),
+				mustString(bd, "item2"),
 			),
 		},
 		{"equality",

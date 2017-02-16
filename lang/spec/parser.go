@@ -6,7 +6,7 @@ import __yyfmt__ "fmt"
 //line parser.y:2
 import (
 	"io"
-	// "fmt"
+	// "log"
 )
 
 var implicitSliceIdx = struct{}{}
@@ -740,6 +740,12 @@ yydefault:
 		//line parser.y:94
 		{
 			yyVAL = emitSliceSelector(yyDollar[2], yySymType{node: implicitSliceIdx}, yyDollar[5])
+		}
+	case 26:
+		yyDollar = yyS[yypt-0 : yypt+1]
+		//line parser.y:95
+		{
+			yyVAL = yySymType{}
 		}
 	case 27:
 		yyDollar = yyS[yypt-2 : yypt+1]

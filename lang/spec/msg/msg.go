@@ -50,7 +50,7 @@ type Msg interface {
 }
 
 type Object interface {
-	Member(string) Msg
+	Member(string) (Msg, bool)
 	Keys() []string
 }
 

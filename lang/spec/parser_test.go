@@ -599,6 +599,24 @@ func TestParse(t *testing.T) {
 				),
 			)),
 		)},
+		{args: "select(.cond.keep) | .name", want: ast(
+			pipe(
+				exprFn(fn(
+					"select",
+					exprSel(selMember(
+						exprLit(litString("cond")),
+						selMember(
+							exprLit(litString("keep")),
+							nil,
+						),
+					)),
+				)),
+				exprSel(selMember(
+					exprLit(litString("name")),
+					nil,
+				)),
+			),
+		)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

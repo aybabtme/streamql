@@ -107,7 +107,10 @@ func (vm *ASTInterpreter) evalExpr(build msg.Builder, m msg.Msg, expr *Expr, sin
 
 	if expr.Next != nil {
 		oldSink := sink
-		sink = func(m msg.Msg) error { return vm.evalExpr(build, m, expr.Next, oldSink) }
+		sink = func(m msg.Msg) error {
+			return vm.evalExpr(build, m, expr.Next, oldSink)
+		}
+
 	}
 
 	switch {
@@ -187,16 +190,26 @@ func (vm *ASTInterpreter) evalMemberSelector(build msg.Builder, m msg.Msg, sel *
 	switch m.Type() {
 
 	case msg.TypeObject:
-		member, err := vm.evalExprToMsgType(build, m, sel.Index, "index", msg.TypeString)
+		member, ok, err := vm.evalExprToMsgType(build, m, sel.Index, "index", msg.TypeString)
 		if err != nil {
 			return err
 		}
-		return sink(m.Member(member.StringVal()))
+		if !ok {
+			return nil
+		}
+		msg, ok := m.Member(member.StringVal())
+		if !ok {
+			return nil
+		}
+		return sink(msg)
 
 	case msg.TypeArray:
-		pos, err := vm.evalExprToMsgType(build, m, sel.Index, "index", msg.TypeInt)
+		pos, ok, err := vm.evalExprToMsgType(build, m, sel.Index, "index", msg.TypeInt)
 		if err != nil {
 			return err
+		}
+		if !ok {
+			return nil
 		}
 		idx := pos.IntVal()
 		if idx < 0 || idx > m.Len() {
@@ -227,16 +240,22 @@ func (vm *ASTInterpreter) evalSliceSelector(build msg.Builder, m msg.Msg, s *Sli
 	)
 
 	if s.From != nil {
-		fromMsg, err := vm.evalExprToMsgType(build, m, s.From, "slice from", msg.TypeInt)
+		fromMsg, ok, err := vm.evalExprToMsgType(build, m, s.From, "slice from", msg.TypeInt)
 		if err != nil {
 			return err
+		}
+		if !ok {
+			return nil
 		}
 		from = fromMsg.IntVal()
 	}
 	if s.To != nil {
-		toMsg, err := vm.evalExprToMsgType(build, m, s.To, "slice to", msg.TypeInt)
+		toMsg, ok, err := vm.evalExprToMsgType(build, m, s.To, "slice to", msg.TypeInt)
 		if err != nil {
 			return err
+		}
+		if !ok {
+			return nil
 		}
 		to = toMsg.IntVal()
 	}
@@ -272,9 +291,12 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 	// bool operators
 	switch {
 	case o.LogNot != nil:
-		arg, err := vm.evalExprToMsgType(build, m, o.LogNot.Arg, "logical not", msg.TypeBool)
+		arg, ok, err := vm.evalExprToMsgType(build, m, o.LogNot.Arg, "logical not", msg.TypeBool)
 		if err != nil {
 			return err
+		}
+		if !ok {
+			return nil
 		}
 		v, err := build.Bool(!arg.BoolVal())
 		if err != nil {
@@ -283,13 +305,19 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 		return sink(v)
 
 	case o.LogAnd != nil:
-		lhs, err := vm.evalExprToMsgType(build, m, o.LogAnd.LHS, "left of logical and", msg.TypeBool)
+		lhs, ok, err := vm.evalExprToMsgType(build, m, o.LogAnd.LHS, "left of logical and", msg.TypeBool)
 		if err != nil {
 			return err
 		}
-		rhs, err := vm.evalExprToMsgType(build, m, o.LogAnd.RHS, "right of logical and", msg.TypeBool)
+		if !ok {
+			return nil
+		}
+		rhs, ok, err := vm.evalExprToMsgType(build, m, o.LogAnd.RHS, "right of logical and", msg.TypeBool)
 		if err != nil {
 			return err
+		}
+		if !ok {
+			return nil
 		}
 		v, err := build.Bool(lhs.BoolVal() && rhs.BoolVal())
 		if err != nil {
@@ -298,13 +326,19 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 		return sink(v)
 
 	case o.LogOr != nil:
-		lhs, err := vm.evalExprToMsgType(build, m, o.LogOr.LHS, "left of logical and", msg.TypeBool)
+		lhs, ok, err := vm.evalExprToMsgType(build, m, o.LogOr.LHS, "left of logical and", msg.TypeBool)
 		if err != nil {
 			return err
 		}
-		rhs, err := vm.evalExprToMsgType(build, m, o.LogOr.RHS, "right of logical and", msg.TypeBool)
+		if !ok {
+			return nil
+		}
+		rhs, ok, err := vm.evalExprToMsgType(build, m, o.LogOr.RHS, "right of logical and", msg.TypeBool)
 		if err != nil {
 			return err
+		}
+		if !ok {
+			return nil
 		}
 		v, err := build.Bool(lhs.BoolVal() || rhs.BoolVal())
 		if err != nil {
@@ -316,13 +350,19 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 	// numerical operators
 	switch {
 	case o.NumAdd != nil:
-		lhs, err := vm.evalExprToMsgType(build, m, o.NumAdd.LHS, "left of an addition", msg.TypeInt, msg.TypeFloat, msg.TypeString)
+		lhs, ok, err := vm.evalExprToMsgType(build, m, o.NumAdd.LHS, "left of an addition", msg.TypeInt, msg.TypeFloat, msg.TypeString)
 		if err != nil {
 			return err
 		}
-		rhs, err := vm.evalExprToMsgType(build, m, o.NumAdd.RHS, "right of an addition", msg.TypeInt, msg.TypeFloat, msg.TypeString)
+		if !ok {
+			return nil
+		}
+		rhs, ok, err := vm.evalExprToMsgType(build, m, o.NumAdd.RHS, "right of an addition", msg.TypeInt, msg.TypeFloat, msg.TypeString)
 		if err != nil {
 			return err
+		}
+		if !ok {
+			return nil
 		}
 		switch lhs.Type() {
 		case msg.TypeInt:
@@ -398,13 +438,19 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 		panic("missing case")
 
 	case o.NumSub != nil:
-		lhs, err := vm.evalExprToMsgType(build, m, o.NumSub.LHS, "left of a subtraction", msg.TypeInt, msg.TypeFloat)
+		lhs, ok, err := vm.evalExprToMsgType(build, m, o.NumSub.LHS, "left of a subtraction", msg.TypeInt, msg.TypeFloat)
 		if err != nil {
 			return err
 		}
-		rhs, err := vm.evalExprToMsgType(build, m, o.NumSub.RHS, "right of a subtraction", msg.TypeInt, msg.TypeFloat)
+		if !ok {
+			return nil
+		}
+		rhs, ok, err := vm.evalExprToMsgType(build, m, o.NumSub.RHS, "right of a subtraction", msg.TypeInt, msg.TypeFloat)
 		if err != nil {
 			return err
+		}
+		if !ok {
+			return nil
 		}
 		switch lhs.Type() {
 		case msg.TypeInt:
@@ -441,13 +487,19 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 		}
 
 	case o.NumDiv != nil:
-		lhs, err := vm.evalExprToMsgType(build, m, o.NumDiv.LHS, "left of a division", msg.TypeInt, msg.TypeFloat)
+		lhs, ok, err := vm.evalExprToMsgType(build, m, o.NumDiv.LHS, "left of a division", msg.TypeInt, msg.TypeFloat)
 		if err != nil {
 			return err
 		}
-		rhs, err := vm.evalExprToMsgType(build, m, o.NumDiv.RHS, "right of a division", msg.TypeInt, msg.TypeFloat)
+		if !ok {
+			return nil
+		}
+		rhs, ok, err := vm.evalExprToMsgType(build, m, o.NumDiv.RHS, "right of a division", msg.TypeInt, msg.TypeFloat)
 		if err != nil {
 			return err
+		}
+		if !ok {
+			return nil
 		}
 		switch {
 		case rhs.Type() == msg.TypeFloat && rhs.FloatVal() == 0:
@@ -490,13 +542,19 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 		}
 
 	case o.NumMul != nil:
-		lhs, err := vm.evalExprToMsgType(build, m, o.NumMul.LHS, "left of a multiplication", msg.TypeInt, msg.TypeFloat)
+		lhs, ok, err := vm.evalExprToMsgType(build, m, o.NumMul.LHS, "left of a multiplication", msg.TypeInt, msg.TypeFloat)
 		if err != nil {
 			return err
 		}
-		rhs, err := vm.evalExprToMsgType(build, m, o.NumMul.RHS, "right of a multiplication", msg.TypeInt, msg.TypeFloat)
+		if !ok {
+			return nil
+		}
+		rhs, ok, err := vm.evalExprToMsgType(build, m, o.NumMul.RHS, "right of a multiplication", msg.TypeInt, msg.TypeFloat)
 		if err != nil {
 			return err
+		}
+		if !ok {
+			return nil
 		}
 		switch lhs.Type() {
 		case msg.TypeInt:
@@ -560,7 +618,12 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 				if lhsKey != rhsKey {
 					return false
 				}
-				if !checkEq(lhs.Member(lhsKey), rhs.Member(rhsKey)) {
+				lhsV, lhsOk := lhs.Member(lhsKey)
+				rhsV, rhsOk := rhs.Member(rhsKey)
+				if lhsOk != rhsOk {
+					return false
+				}
+				if !checkEq(lhsV, rhsV) {
 					return false
 				}
 			}
@@ -620,13 +683,19 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 	// comparators
 	switch {
 	case o.CmpEq != nil:
-		lhs, err := vm.evalExprToMsgType(build, m, o.CmpEq.LHS, "left of an equality", msg.TypeInt, msg.TypeFloat, msg.TypeBool, msg.TypeString, msg.TypeArray, msg.TypeObject)
+		lhs, ok, err := vm.evalExprToMsgType(build, m, o.CmpEq.LHS, "left of an equality", msg.TypeInt, msg.TypeFloat, msg.TypeBool, msg.TypeString, msg.TypeArray, msg.TypeObject)
 		if err != nil {
 			return err
 		}
-		rhs, err := vm.evalExprToMsgType(build, m, o.CmpEq.RHS, "right of an equality", msg.TypeInt, msg.TypeFloat, msg.TypeBool, msg.TypeString, msg.TypeArray, msg.TypeObject)
+		if !ok {
+			return nil
+		}
+		rhs, ok, err := vm.evalExprToMsgType(build, m, o.CmpEq.RHS, "right of an equality", msg.TypeInt, msg.TypeFloat, msg.TypeBool, msg.TypeString, msg.TypeArray, msg.TypeObject)
 		if err != nil {
 			return err
+		}
+		if !ok {
+			return nil
 		}
 		v, err := build.Bool(checkEq(lhs, rhs))
 		if err != nil {
@@ -635,13 +704,19 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 		return sink(v)
 
 	case o.CmpNotEq != nil:
-		lhs, err := vm.evalExprToMsgType(build, m, o.CmpNotEq.LHS, "left of a non-equality", msg.TypeInt, msg.TypeFloat, msg.TypeBool, msg.TypeString, msg.TypeArray, msg.TypeObject)
+		lhs, ok, err := vm.evalExprToMsgType(build, m, o.CmpNotEq.LHS, "left of a non-equality", msg.TypeInt, msg.TypeFloat, msg.TypeBool, msg.TypeString, msg.TypeArray, msg.TypeObject)
 		if err != nil {
 			return err
 		}
-		rhs, err := vm.evalExprToMsgType(build, m, o.CmpNotEq.RHS, "right of a non-equality", msg.TypeInt, msg.TypeFloat, msg.TypeBool, msg.TypeString, msg.TypeArray, msg.TypeObject)
+		if !ok {
+			return nil
+		}
+		rhs, ok, err := vm.evalExprToMsgType(build, m, o.CmpNotEq.RHS, "right of a non-equality", msg.TypeInt, msg.TypeFloat, msg.TypeBool, msg.TypeString, msg.TypeArray, msg.TypeObject)
 		if err != nil {
 			return err
+		}
+		if !ok {
+			return nil
 		}
 		v, err := build.Bool(!checkEq(lhs, rhs))
 		if err != nil {
@@ -650,13 +725,19 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 		return sink(v)
 
 	case o.CmpGt != nil:
-		lhs, err := vm.evalExprToMsgType(build, m, o.CmpGt.LHS, "left of a greater-than comparison", msg.TypeInt, msg.TypeFloat, msg.TypeString)
+		lhs, ok, err := vm.evalExprToMsgType(build, m, o.CmpGt.LHS, "left of a greater-than comparison", msg.TypeInt, msg.TypeFloat, msg.TypeString)
 		if err != nil {
 			return err
 		}
-		rhs, err := vm.evalExprToMsgType(build, m, o.CmpGt.RHS, "right of a greater-than comparison", msg.TypeInt, msg.TypeFloat, msg.TypeString)
+		if !ok {
+			return nil
+		}
+		rhs, ok, err := vm.evalExprToMsgType(build, m, o.CmpGt.RHS, "right of a greater-than comparison", msg.TypeInt, msg.TypeFloat, msg.TypeString)
 		if err != nil {
 			return err
+		}
+		if !ok {
+			return nil
 		}
 		isLess, err := checkLess(lhs, rhs)
 		if err != nil {
@@ -669,13 +750,19 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 		return sink(v)
 
 	case o.CmpGtOrEq != nil:
-		lhs, err := vm.evalExprToMsgType(build, m, o.CmpGtOrEq.LHS, "left of a greater-than-or-equal comparison", msg.TypeInt, msg.TypeFloat, msg.TypeString)
+		lhs, ok, err := vm.evalExprToMsgType(build, m, o.CmpGtOrEq.LHS, "left of a greater-than-or-equal comparison", msg.TypeInt, msg.TypeFloat, msg.TypeString)
 		if err != nil {
 			return err
 		}
-		rhs, err := vm.evalExprToMsgType(build, m, o.CmpGtOrEq.RHS, "right of a greater-than-or-equal comparison", msg.TypeInt, msg.TypeFloat, msg.TypeString)
+		if !ok {
+			return nil
+		}
+		rhs, ok, err := vm.evalExprToMsgType(build, m, o.CmpGtOrEq.RHS, "right of a greater-than-or-equal comparison", msg.TypeInt, msg.TypeFloat, msg.TypeString)
 		if err != nil {
 			return err
+		}
+		if !ok {
+			return nil
 		}
 		isLess, err := checkLess(lhs, rhs)
 		if err != nil {
@@ -688,13 +775,19 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 		return sink(v)
 
 	case o.CmpLs != nil:
-		lhs, err := vm.evalExprToMsgType(build, m, o.CmpLs.LHS, "left of a less-than comparison", msg.TypeInt, msg.TypeFloat, msg.TypeString)
+		lhs, ok, err := vm.evalExprToMsgType(build, m, o.CmpLs.LHS, "left of a less-than comparison", msg.TypeInt, msg.TypeFloat, msg.TypeString)
 		if err != nil {
 			return err
 		}
-		rhs, err := vm.evalExprToMsgType(build, m, o.CmpLs.RHS, "right of a less-than comparison", msg.TypeInt, msg.TypeFloat, msg.TypeString)
+		if !ok {
+			return nil
+		}
+		rhs, ok, err := vm.evalExprToMsgType(build, m, o.CmpLs.RHS, "right of a less-than comparison", msg.TypeInt, msg.TypeFloat, msg.TypeString)
 		if err != nil {
 			return err
+		}
+		if !ok {
+			return nil
 		}
 		isLess, err := checkLess(lhs, rhs)
 		if err != nil {
@@ -707,13 +800,19 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 		return sink(v)
 
 	case o.CmpLsOrEq != nil:
-		lhs, err := vm.evalExprToMsgType(build, m, o.CmpLsOrEq.LHS, "left of a less-than-or-equal comparison", msg.TypeInt, msg.TypeFloat, msg.TypeString)
+		lhs, ok, err := vm.evalExprToMsgType(build, m, o.CmpLsOrEq.LHS, "left of a less-than-or-equal comparison", msg.TypeInt, msg.TypeFloat, msg.TypeString)
 		if err != nil {
 			return err
 		}
-		rhs, err := vm.evalExprToMsgType(build, m, o.CmpLsOrEq.RHS, "right of a less-than-or-equal comparison", msg.TypeInt, msg.TypeFloat, msg.TypeString)
+		if !ok {
+			return nil
+		}
+		rhs, ok, err := vm.evalExprToMsgType(build, m, o.CmpLsOrEq.RHS, "right of a less-than-or-equal comparison", msg.TypeInt, msg.TypeFloat, msg.TypeString)
 		if err != nil {
 			return err
+		}
+		if !ok {
+			return nil
 		}
 		isLess, err := checkLess(lhs, rhs)
 		if err != nil {
@@ -758,9 +857,12 @@ func (vm *ASTInterpreter) lookupFuncs(name string) (int, evalFunc) {
 // Emits the current message if the given expression evaluates to true.
 func (vm *ASTInterpreter) evalFuncSelect(build msg.Builder, m msg.Msg, args []*Expr, sink msg.Sink) error {
 	defer trace()()
-	cond, err := vm.evalExprToMsgType(build, m, args[0], "function select", msg.TypeBool)
+	cond, ok, err := vm.evalExprToMsgType(build, m, args[0], "function select", msg.TypeBool)
 	if err != nil {
 		return err
+	}
+	if !ok {
+		return nil
 	}
 	if cond.BoolVal() {
 		return sink(m)
@@ -771,31 +873,39 @@ func (vm *ASTInterpreter) evalFuncSelect(build msg.Builder, m msg.Msg, args []*E
 // helper
 
 // evalExprToMsg evaluates an expression's result and verifies that it is of the requested type.
-func (vm *ASTInterpreter) evalExprToMsg(build msg.Builder, m msg.Msg, expr *Expr) (msg.Msg, error) {
+func (vm *ASTInterpreter) evalExprToMsg(build msg.Builder, m msg.Msg, expr *Expr) (msg.Msg, bool, error) {
 	defer trace()()
-	var evaled msg.Msg
+	var (
+		evaled msg.Msg
+		found  bool
+	)
 	err := vm.evalExpr(build, m, expr, func(got msg.Msg) error {
 		evaled = got
+		found = true
 		return nil
 
 	})
-	return evaled, err
+	return evaled, found, err
 }
 
 // evalExprToMsgType evaluates an expression's result and verifies that it is of the requested type.
-func (vm *ASTInterpreter) evalExprToMsgType(build msg.Builder, m msg.Msg, expr *Expr, action string, want ...msg.Type) (msg.Msg, error) {
+func (vm *ASTInterpreter) evalExprToMsgType(build msg.Builder, m msg.Msg, expr *Expr, action string, want ...msg.Type) (msg.Msg, bool, error) {
 	defer trace()()
-	var evaled msg.Msg
+	var (
+		evaled msg.Msg
+		found  bool
+	)
 	err := vm.evalExpr(build, m, expr, func(got msg.Msg) error {
 		for _, w := range want {
 			if got.Type() != w {
 				continue
 			}
 			evaled = got
+			found = true
 			return nil
 		}
 		return vm.skipEvalWrongArgType(action, m.Type(), got.Type(), want...)
 
 	})
-	return evaled, err
+	return evaled, found, err
 }

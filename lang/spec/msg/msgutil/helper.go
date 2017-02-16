@@ -48,7 +48,10 @@ func Convert(dst msg.Builder, in msg.Msg) (msg.Msg, error) {
 func convertObject(dst msg.Builder, in msg.Object) (msg.Msg, error) {
 	return dst.Object(func(ob msg.ObjectBuilder) error {
 		for _, k := range in.Keys() {
-			v := in.Member(k)
+			v, ok := in.Member(k)
+			if !ok {
+				panic("invalid object, .Keys() returned a key that has no Member(key)")
+			}
 			return ob.AddMember(
 				k,
 				func(bb msg.Builder) (msg.Msg, error) {
@@ -103,7 +106,11 @@ func Reveal(in msg.Msg) (interface{}, error) {
 			outv := make(map[string]interface{}, len(keys))
 			var err error
 			for _, k := range keys {
-				outv[k], err = Reveal(val.Member(k))
+				v, ok := val.Member(k)
+				if !ok {
+					panic("invalid object, .Keys() returned a key that has no Member(key)")
+				}
+				outv[k], err = Reveal(v)
 				if err != nil {
 					return err
 				}
@@ -279,13 +286,13 @@ type (
 	scopedNull   struct{ under msg.Msg }
 )
 
-func (sc scopedObject) Member(m string) msg.Msg        { return sc.under.Member(m) }
-func (sc scopedObject) Keys() []string                 { return sc.under.Keys() }
-func (sc scopedArray) Slice(from, to int64) msg.Source { return sc.under.Slice(from, to) }
-func (sc scopedArray) Index(i int64) msg.Msg           { return sc.under.Index(i) }
-func (sc scopedArray) Len() int64                      { return sc.under.Len() }
-func (sc scopedString) StringVal() string              { return sc.under.StringVal() }
-func (sc scopedInt) IntVal() int64                     { return sc.under.IntVal() }
-func (sc scopedFloat) FloatVal() float64               { return sc.under.FloatVal() }
-func (sc scopedBool) BoolVal() bool                    { return sc.under.BoolVal() }
-func (sc scopedNull) IsNull() bool                     { return sc.under.IsNull() }
+func (sc scopedObject) Member(m string) (msg.Msg, bool) { return sc.under.Member(m) }
+func (sc scopedObject) Keys() []string                  { return sc.under.Keys() }
+func (sc scopedArray) Slice(from, to int64) msg.Source  { return sc.under.Slice(from, to) }
+func (sc scopedArray) Index(i int64) msg.Msg            { return sc.under.Index(i) }
+func (sc scopedArray) Len() int64                       { return sc.under.Len() }
+func (sc scopedString) StringVal() string               { return sc.under.StringVal() }
+func (sc scopedInt) IntVal() int64                      { return sc.under.IntVal() }
+func (sc scopedFloat) FloatVal() float64                { return sc.under.FloatVal() }
+func (sc scopedBool) BoolVal() bool                     { return sc.under.BoolVal() }
+func (sc scopedNull) IsNull() bool                      { return sc.under.IsNull() }

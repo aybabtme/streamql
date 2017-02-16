@@ -3,7 +3,7 @@ package spec
 
 import (
     "io"
-    // "fmt"
+    // "log"
 )
 
 var implicitSliceIdx = struct{}{}
@@ -92,7 +92,7 @@ sub_selector: Dot Identifier sub_selector                           { $$ = emitM
             | LeftBracket expr Colon expr RightBracket sub_selector { $$ = emitSliceSelector($2, $4, $6)}
             | LeftBracket Colon expr RightBracket sub_selector      { $$ = emitSliceSelector(yySymType{node: implicitSliceIdx}, $3, $4)}
             | LeftBracket expr Colon RightBracket sub_selector      { $$ = emitSliceSelector($2, yySymType{node: implicitSliceIdx}, $5)}
-            | ;
+            | { $$ = yySymType{} };
 
 operator:      LogNot    expr               { $$ = emitOpNot($2)        }
         | expr LogAnd    expr               { $$ = emitOpAnd($1, $3)    }
