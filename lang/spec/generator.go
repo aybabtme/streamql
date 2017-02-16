@@ -238,6 +238,11 @@ func emitOpAnd(lhs, rhs yySymType) yySymType {
 func emitOpOr(lhs, rhs yySymType) yySymType {
 	return yySymType{node: &OperandLogOr{LHS: expr(lhs), RHS: expr(rhs)}}
 }
+func emitOpNeg(arg yySymType) yySymType {
+	z := int64(0)
+	zero := &Expr{Literal: &Literal{Int: &z}}
+	return yySymType{node: &OperandNumSub{LHS: zero, RHS: expr(arg)}}
+}
 func emitOpAdd(lhs, rhs yySymType) yySymType {
 	return yySymType{node: &OperandNumAdd{LHS: expr(lhs), RHS: expr(rhs)}}
 }
@@ -286,7 +291,7 @@ func emitFuncCall(arg0, arg1 yySymType) yySymType {
 		args = []*Expr{t}
 	case nil:
 	default:
-		panic(fmt.Sprintf("invalid function arguments: %T", t))
+		panic(fmt.Sprintf("invalid function arguments: %#v", t))
 	}
 
 	return yySymType{node: &FuncCall{Name: name, Args: args}}
@@ -305,6 +310,8 @@ func emitArgs(arg0, arg1 yySymType) yySymType {
 	switch t := arg1.node.(type) {
 	case []*Expr:
 		prev = t
+	case *Expr:
+		prev = []*Expr{t}
 	case nil:
 	default:
 		panic(fmt.Sprintf("invalid function argument, %T", t))

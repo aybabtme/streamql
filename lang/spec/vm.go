@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	T      bool = true
+	T      bool = false
 	indent int
 )
 
@@ -39,7 +39,8 @@ func trace() func() {
 }
 
 type ASTInterpreter struct {
-	tree *AST
+	Strict bool
+	tree   *AST
 }
 
 func (vm *ASTInterpreter) Run(build msg.Builder, src msg.Source, sink msg.Sink) error {
@@ -53,7 +54,14 @@ func (vm *ASTInterpreter) Run(build msg.Builder, src msg.Source, sink msg.Sink) 
 			if !more {
 				return nil
 			}
-			if err := sink(msg); err != nil {
+			err = sink(msg)
+			switch err.(type) {
+			case nil:
+			case skipableError:
+				if vm.Strict {
+					return err
+				}
+			default:
 				return err
 			}
 		}
@@ -67,11 +75,26 @@ func (vm *ASTInterpreter) Run(build msg.Builder, src msg.Source, sink msg.Sink) 
 		if !more {
 			return nil
 		}
-		if err := vm.evalExpr(build, msg, vm.tree.Expr, sink); err != nil {
+		err = vm.evalExpr(build, msg, vm.tree.Expr, sink)
+		switch err.(type) {
+		case nil:
+		case skipableError:
+			if vm.Strict {
+				return err
+			}
+		default:
 			return err
 		}
 	}
 }
+
+type skipableError interface {
+	IsSkipable()
+}
+
+type skipable struct{ error }
+
+func (*skipable) IsSkipable() {}
 
 func (vm *ASTInterpreter) skipEvalWrongType(action string, got msg.Type, want ...msg.Type) error {
 	defer trace()()
@@ -82,7 +105,7 @@ func (vm *ASTInterpreter) skipEvalWrongType(action string, got msg.Type, want ..
 	for _, w := range want[1:] {
 		str += fmt.Sprintf(" or %v", w)
 	}
-	return errors.New(str + ")")
+	return &skipable{errors.New(str + ")")}
 }
 
 func (vm *ASTInterpreter) skipEvalWrongArgType(action string, target msg.Type, arg msg.Type, want ...msg.Type) error {
@@ -94,12 +117,12 @@ func (vm *ASTInterpreter) skipEvalWrongArgType(action string, target msg.Type, a
 	for _, w := range want[1:] {
 		str += fmt.Sprintf(" or %v", w)
 	}
-	return errors.New(str + ")")
+	return &skipable{errors.New(str + ")")}
 }
 
 func (vm *ASTInterpreter) skipEvalWrongArgValue(action string, arg msg.Type, problem string) error {
 	defer trace()()
-	return fmt.Errorf("%s with given %v is impossible: %s", action, arg, problem)
+	return &skipable{fmt.Errorf("%s with given %v is impossible: %s", action, arg, problem)}
 }
 
 func (vm *ASTInterpreter) evalExpr(build msg.Builder, m msg.Msg, expr *Expr, sink msg.Sink) error {
@@ -743,7 +766,8 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 		if err != nil {
 			return err
 		}
-		v, err := build.Bool(!isLess)
+		striclyGreater := !isLess && !checkEq(lhs, rhs)
+		v, err := build.Bool(striclyGreater)
 		if err != nil {
 			return err
 		}
@@ -793,7 +817,8 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 		if err != nil {
 			return err
 		}
-		v, err := build.Bool(isLess)
+		strictlyLess := isLess && !checkEq(lhs, rhs)
+		v, err := build.Bool(strictlyLess)
 		if err != nil {
 			return err
 		}

@@ -97,6 +97,7 @@ sub_selector: Dot Identifier sub_selector                           { $$ = emitM
 operator:      LogNot    expr               { $$ = emitOpNot($2)        }
         | expr LogAnd    expr               { $$ = emitOpAnd($1, $3)    }
         | expr LogOr     expr               { $$ = emitOpOr($1, $3)     }
+        |      NumSub    expr               { $$ = emitOpNeg($2)        }
         | expr NumAdd    expr               { $$ = emitOpAdd($1, $3)    }
         | expr NumSub    expr               { $$ = emitOpSub($1, $3)    }
         | expr NumDiv    expr               { $$ = emitOpDiv($1, $3)    }

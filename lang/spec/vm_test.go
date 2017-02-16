@@ -13,37 +13,38 @@ func TestVM(t *testing.T) {
 	bd := gomsg.Build()
 
 	tests := []struct {
-		name  string
-		input []msg.Msg
-		query string
-		want  []msg.Msg
+		name   string
+		strict bool
+		input  []msg.Msg
+		query  string
+		want   []msg.Msg
 	}{
-		{"passthru of nothing",
+		{"passthru of nothing", true,
 			list(),
 			"",
 			list(),
 		},
-		{"passthru of nothing",
+		{"passthru of nothing", true,
 			list(),
 			".",
 			list(),
 		},
-		{"passthru",
+		{"passthru", true,
 			list(mustBool(bd, true)),
 			"",
 			list(mustBool(bd, true)),
 		},
-		{"passthru",
+		{"passthru", true,
 			list(mustBool(bd, true)),
 			".",
 			list(mustBool(bd, true)),
 		},
-		{"passthru if true",
+		{"passthru if true", true,
 			list(mustBool(bd, true), mustBool(bd, false), mustBool(bd, true), mustBool(bd, false)),
 			"select(.)",
 			list(mustBool(bd, true), mustBool(bd, true)),
 		},
-		{"explode",
+		{"explode", true,
 			list(
 				mustArray(bd,
 					mustInt(bd, 1),
@@ -66,7 +67,7 @@ func TestVM(t *testing.T) {
 				mustInt(bd, 6),
 			),
 		},
-		{"explode",
+		{"explode", true,
 			list(
 				mustArray(bd,
 					mustInt(bd, 1),
@@ -89,7 +90,7 @@ func TestVM(t *testing.T) {
 				mustInt(bd, 6),
 			),
 		},
-		{"explode recursively",
+		{"explode recursively", true,
 			list(
 				mustArray(bd,
 					mustArray(bd,
@@ -132,7 +133,7 @@ func TestVM(t *testing.T) {
 				mustInt(bd, 12),
 			),
 		},
-		{"explode parts skip first",
+		{"explode parts skip first", true,
 			list(
 				mustArray(bd,
 					mustInt(bd, 1),
@@ -153,7 +154,7 @@ func TestVM(t *testing.T) {
 				mustInt(bd, 6),
 			),
 		},
-		{"explode parts skip last",
+		{"explode parts skip last", true,
 			list(
 				mustArray(bd,
 					mustInt(bd, 1),
@@ -174,7 +175,7 @@ func TestVM(t *testing.T) {
 				mustInt(bd, 5),
 			),
 		},
-		{"explode parts skip first and last",
+		{"explode parts skip first and last", true,
 			list(
 				mustArray(bd,
 					mustInt(bd, 1),
@@ -193,7 +194,7 @@ func TestVM(t *testing.T) {
 				mustInt(bd, 5),
 			),
 		},
-		{"index into an object",
+		{"index into an object", true,
 			list(
 				mustObject(bd, map[string]msg.Msg{
 					"hello": mustString(bd, "world"),
@@ -204,7 +205,7 @@ func TestVM(t *testing.T) {
 				mustString(bd, "world"),
 			),
 		},
-		{"index into recursively into an object",
+		{"index into recursively into an object", true,
 			list(
 				mustObject(bd, map[string]msg.Msg{
 					"hello": mustObject(bd, map[string]msg.Msg{
@@ -221,7 +222,7 @@ func TestVM(t *testing.T) {
 				mustFloat(bd, 3.14159),
 			),
 		},
-		{"maybe index into recursively into an object",
+		{"maybe index into recursively into an object", true,
 			list(
 				mustObject(bd, map[string]msg.Msg{
 					"hello": mustObject(bd, map[string]msg.Msg{
@@ -239,7 +240,7 @@ func TestVM(t *testing.T) {
 				mustFloat(bd, 2*3.14159),
 			),
 		},
-		{"select into an object",
+		{"select into an object", true,
 			list(
 				mustObject(bd, map[string]msg.Msg{
 					"keep": mustBool(bd, true),
@@ -260,7 +261,7 @@ func TestVM(t *testing.T) {
 				mustString(bd, "item2"),
 			),
 		},
-		{"select recursively into an object",
+		{"select recursively into an object", true,
 			list(
 				mustObject(bd, map[string]msg.Msg{
 					"cond": mustObject(bd, map[string]msg.Msg{
@@ -287,7 +288,7 @@ func TestVM(t *testing.T) {
 				mustString(bd, "item2"),
 			),
 		},
-		{"equality",
+		{"equality", true,
 			list(
 				// float equality
 				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustFloat(bd, 1)}),
@@ -374,6 +375,475 @@ func TestVM(t *testing.T) {
 				mustBool(bd, false),
 			),
 		},
+		{"non-equality", true,
+			list(
+				// float equality
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustFloat(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustFloat(bd, 2)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 3.1415), "r": mustFloat(bd, 3.1415)}),
+
+				// int equality
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustInt(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 2), "r": mustInt(bd, 1)}),
+
+				// int~float equality
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 2), "r": mustInt(bd, 2)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 2), "r": mustFloat(bd, 2)}),
+
+				// string equality
+				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello"), "r": mustString(bd, "hello")}),
+				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello"), "r": mustString(bd, "world")}),
+
+				// bool equality
+				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, true), "r": mustBool(bd, true)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, true), "r": mustBool(bd, false)}),
+
+				// array equality
+				mustObject(bd, map[string]msg.Msg{
+					"l": mustArray(bd,
+						mustInt(bd, 0),
+						mustInt(bd, 1),
+					),
+					"r": mustArray(bd,
+						mustInt(bd, 0),
+						mustInt(bd, 1),
+					),
+				}),
+				mustObject(bd, map[string]msg.Msg{
+					"l": mustArray(bd,
+						mustInt(bd, 1),
+						mustInt(bd, 0),
+					),
+					"r": mustArray(bd,
+						mustInt(bd, 0),
+						mustInt(bd, 1),
+					),
+				}),
+
+				// object equality
+				mustObject(bd, map[string]msg.Msg{
+					"l": mustObject(bd, map[string]msg.Msg{"hello": mustString(bd, "world")}),
+					"r": mustObject(bd, map[string]msg.Msg{"hello": mustString(bd, "world")}),
+				}),
+				mustObject(bd, map[string]msg.Msg{
+					"l": mustObject(bd, map[string]msg.Msg{"hello": mustString(bd, "world")}),
+					"r": mustObject(bd, map[string]msg.Msg{"bye": mustString(bd, "world")}),
+				}),
+
+				// incompatible types equality
+				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, true), "r": mustInt(bd, 2)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 2), "r": mustString(bd, "")}),
+			),
+			".l != .r",
+			list(
+				mustBool(bd, false),
+				mustBool(bd, true),
+				mustBool(bd, false),
+
+				mustBool(bd, false),
+				mustBool(bd, true),
+
+				mustBool(bd, false),
+				mustBool(bd, false),
+
+				mustBool(bd, false),
+				mustBool(bd, true),
+
+				mustBool(bd, false),
+				mustBool(bd, true),
+
+				mustBool(bd, false),
+				mustBool(bd, true),
+
+				mustBool(bd, false),
+				mustBool(bd, true),
+
+				mustBool(bd, true),
+				mustBool(bd, true),
+			),
+		},
+		{"greater than", true,
+			list(
+				// float equality
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustFloat(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 2), "r": mustFloat(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 3.1415), "r": mustFloat(bd, 3)}),
+
+				// int equality
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustInt(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 2), "r": mustInt(bd, 1)}),
+
+				// int~float equality
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 2), "r": mustInt(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 2), "r": mustFloat(bd, 1)}),
+
+				// string equality
+				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello"), "r": mustString(bd, "hello")}),
+				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello"), "r": mustString(bd, "bye")}),
+			),
+			".l > .r",
+			list(
+				mustBool(bd, false),
+				mustBool(bd, true),
+				mustBool(bd, true),
+
+				mustBool(bd, false),
+				mustBool(bd, true),
+
+				mustBool(bd, true),
+				mustBool(bd, true),
+
+				mustBool(bd, false),
+				mustBool(bd, true),
+			),
+		},
+		{"greater than or eq", true,
+			list(
+				// float equality
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustFloat(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 2), "r": mustFloat(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 3.1415), "r": mustFloat(bd, 3)}),
+
+				// int equality
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustInt(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 2), "r": mustInt(bd, 1)}),
+
+				// int~float equality
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 2), "r": mustInt(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 2), "r": mustFloat(bd, 1)}),
+
+				// string equality
+				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello"), "r": mustString(bd, "hello")}),
+				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello"), "r": mustString(bd, "bye")}),
+			),
+			".l >= .r",
+			list(
+				mustBool(bd, true),
+				mustBool(bd, true),
+				mustBool(bd, true),
+
+				mustBool(bd, true),
+				mustBool(bd, true),
+
+				mustBool(bd, true),
+				mustBool(bd, true),
+
+				mustBool(bd, true),
+				mustBool(bd, true),
+			),
+		},
+		{"less than", true,
+			list(
+				// float equality
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustFloat(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 2), "r": mustFloat(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustFloat(bd, 2)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 3.1415), "r": mustFloat(bd, 3)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 3), "r": mustFloat(bd, 3.1415)}),
+
+				// int equality
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustInt(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 2), "r": mustInt(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustInt(bd, 2)}),
+
+				// int~float equality
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 2), "r": mustInt(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 2), "r": mustFloat(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustInt(bd, 2)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustFloat(bd, 2)}),
+
+				// string equality
+				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello"), "r": mustString(bd, "hello")}),
+				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello"), "r": mustString(bd, "bye")}),
+				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "bye"), "r": mustString(bd, "hello")}),
+			),
+			".l < .r",
+			list(
+				mustBool(bd, false),
+				mustBool(bd, false),
+				mustBool(bd, true),
+				mustBool(bd, false),
+				mustBool(bd, true),
+
+				mustBool(bd, false),
+				mustBool(bd, false),
+				mustBool(bd, true),
+
+				mustBool(bd, false),
+				mustBool(bd, false),
+				mustBool(bd, true),
+				mustBool(bd, true),
+
+				mustBool(bd, false),
+				mustBool(bd, false),
+				mustBool(bd, true),
+			),
+		},
+		{"less than or eq", true,
+			list(
+				// float equality
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustFloat(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 2), "r": mustFloat(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 3.1415), "r": mustFloat(bd, 3)}),
+
+				// int equality
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustInt(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 2), "r": mustInt(bd, 1)}),
+
+				// int~float equality
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 2), "r": mustInt(bd, 1)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 2), "r": mustFloat(bd, 1)}),
+
+				// string equality
+				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello"), "r": mustString(bd, "hello")}),
+				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello"), "r": mustString(bd, "bye")}),
+			),
+			".l <= .r",
+			list(
+				mustBool(bd, true),
+				mustBool(bd, false),
+				mustBool(bd, false),
+
+				mustBool(bd, true),
+				mustBool(bd, false),
+
+				mustBool(bd, false),
+				mustBool(bd, false),
+
+				mustBool(bd, true),
+				mustBool(bd, false),
+			),
+		},
+		{"NOT logic table", true,
+			list(
+				mustBool(bd, false),
+				mustBool(bd, true),
+			),
+			"!.",
+			list(
+				mustBool(bd, true),
+				mustBool(bd, false),
+			),
+		},
+		{"AND logic table", true,
+			list(
+				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, false), "r": mustBool(bd, false)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, false), "r": mustBool(bd, true)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, true), "r": mustBool(bd, false)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, true), "r": mustBool(bd, true)}),
+			),
+			".l && .r",
+			list(
+				mustBool(bd, false),
+				mustBool(bd, false),
+				mustBool(bd, false),
+				mustBool(bd, true),
+			),
+		},
+		{"OR logic table", true,
+			list(
+				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, false), "r": mustBool(bd, false)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, false), "r": mustBool(bd, true)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, true), "r": mustBool(bd, false)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, true), "r": mustBool(bd, true)}),
+			),
+			".l || .r",
+			list(
+				mustBool(bd, false),
+				mustBool(bd, true),
+				mustBool(bd, true),
+				mustBool(bd, true),
+			),
+		},
+		{"XOR logic table", true,
+			list(
+				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, false), "r": mustBool(bd, false)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, false), "r": mustBool(bd, true)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, true), "r": mustBool(bd, false)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, true), "r": mustBool(bd, true)}),
+			),
+			".l != .r",
+			list(
+				mustBool(bd, false),
+				mustBool(bd, true),
+				mustBool(bd, true),
+				mustBool(bd, false),
+			),
+		},
+		{"addition", true,
+			list(
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustFloat(bd, 2)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustInt(bd, 2)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello "), "r": mustString(bd, "world")}),
+
+				// int promotion to float
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustInt(bd, 2)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustFloat(bd, 2)}),
+
+				// int promotion to string
+				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello "), "r": mustInt(bd, 2)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustString(bd, "world")}),
+
+				// float promotion to string
+				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello "), "r": mustFloat(bd, 2.2)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1.1), "r": mustString(bd, "world")}),
+			),
+			".l + .r",
+			list(
+				mustFloat(bd, 3),
+				mustInt(bd, 3),
+				mustString(bd, "hello world"),
+
+				mustFloat(bd, 3),
+				mustFloat(bd, 3),
+
+				mustString(bd, "hello 2"),
+				mustString(bd, "1world"),
+
+				mustString(bd, "hello 2.2"),
+				mustString(bd, "1.1world"),
+			),
+		},
+
+		{"subtraction", true,
+			list(
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustFloat(bd, 2)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustInt(bd, 2)}),
+				// int promotion to float
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustInt(bd, 2)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustFloat(bd, 2)}),
+			),
+			".l - .r",
+			list(
+				mustFloat(bd, -1),
+				mustInt(bd, -1),
+				mustFloat(bd, -1),
+				mustFloat(bd, -1),
+			),
+		},
+		{"single int subtraction (negation)", true,
+			list(
+				mustBool(bd, true),
+			),
+			"-1",
+			list(
+				mustInt(bd, -1),
+			),
+		},
+		{"single float subtraction (negation)", true,
+			list(
+				mustBool(bd, true),
+			),
+			"-1.2",
+			list(
+				mustFloat(bd, -1.2),
+			),
+		},
+		{"division", true,
+			list(
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustFloat(bd, 2)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustInt(bd, 2)}),
+				// int promotion to float
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustInt(bd, 2)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustFloat(bd, 2)}),
+			),
+			".l / .r",
+			list(
+				mustFloat(bd, 1.0/2.0),
+				mustInt(bd, 1/2),
+				mustFloat(bd, 1.0/2.0),
+				mustFloat(bd, 1.0/2.0),
+			),
+		},
+		{"division by zero", false, // not strict, we want to skip the divisions by zero
+			list(
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustFloat(bd, 0)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustInt(bd, 0)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustInt(bd, 0)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustFloat(bd, 0)}),
+			),
+			".l / .r",
+			list(),
+		},
+		{"multiplication", true,
+			list(
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 3.5), "r": mustFloat(bd, 2)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 3), "r": mustInt(bd, 2)}),
+				// int promotion to float
+				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 3.5), "r": mustInt(bd, 2)}),
+				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 3), "r": mustFloat(bd, 2.5)}),
+			),
+			".l * .r",
+			list(
+				mustFloat(bd, 7),
+				mustInt(bd, 6),
+				mustFloat(bd, 7),
+				mustFloat(bd, 7.5),
+			),
+		},
+
+		{"priority of operations", true,
+			list(mustBool(bd, true)),
+			"4-1",
+			list(mustInt(bd, 3)),
+		},
+		{"priority of operations", true,
+			list(mustBool(bd, true)),
+			"4.0-(1+4)",
+			list(mustFloat(bd, -1)),
+		},
+		{"priority of operations", true,
+			list(mustBool(bd, true)),
+			"4-1+4",
+			list(mustInt(bd, 7)),
+		},
+		{"priority of operations", true,
+			list(mustBool(bd, true)),
+			"4-(1+4)",
+			list(mustInt(bd, -1)),
+		},
+		{"priority of operations", true,
+			list(mustBool(bd, true)),
+			"4.0-(1+4)",
+			list(mustFloat(bd, -1)),
+		},
+		{"priority of operations", true,
+			list(mustBool(bd, true)),
+			"4-1+4",
+			list(mustInt(bd, 7)),
+		},
+		{"priority of operations", true,
+			list(mustBool(bd, true)),
+			"4.0-1+4",
+			list(mustFloat(bd, 7)),
+		},
+		{"priority of operations", true,
+			list(mustBool(bd, true)),
+			"4/(1*4)",
+			list(mustInt(bd, 1)),
+		},
+		{"priority of operations", true,
+			list(mustBool(bd, true)),
+			"4.0/(1.0*4.0)",
+			list(mustFloat(bd, 1.0)),
+		},
+		{"priority of operations", true,
+			list(mustBool(bd, true)),
+			"4/1*4",
+			list(mustInt(bd, 16)),
+		},
+		{"priority of operations", true,
+			list(mustBool(bd, true)),
+			"4.0/1.0*4.0",
+			list(mustFloat(bd, 16.0)),
+		},
+
+		// need way to assert errors
+		// {"invalid function call", false,
+		// 	list(mustBool(bd, true)),
+		// 	"select(.too, .many, .arg)",
+		// 	list(mustFloat(bd, 16.0)),
+		// },
 	}
 
 	for _, tt := range tests {
@@ -382,7 +852,7 @@ func TestVM(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			vm := &ASTInterpreter{tree: ast}
+			vm := &ASTInterpreter{tree: ast, Strict: tt.strict}
 
 			var got []msg.Msg
 			err = vm.Run(bd, ArraySource(tt.input), func(m msg.Msg) error {

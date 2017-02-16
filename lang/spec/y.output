@@ -4,14 +4,15 @@ state 0
 	program: .    (2)
 
 	Dot  shift 12
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  reduce 2 (src line 65)
 
 	program  goto 1
@@ -44,19 +45,19 @@ state 2
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
 
-	Pipe  shift 16
-	LogOr  shift 18
-	LogAnd  shift 17
-	CmpEq  shift 23
-	CmpNotEq  shift 24
-	CmpGt  shift 25
-	CmpGtOrEq  shift 26
-	CmpLs  shift 27
-	CmpLsOrEq  shift 28
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
+	Pipe  shift 17
+	LogOr  shift 19
+	LogAnd  shift 18
+	CmpEq  shift 24
+	CmpNotEq  shift 25
+	CmpGt  shift 26
+	CmpGtOrEq  shift 27
+	CmpLs  shift 28
+	CmpLsOrEq  shift 29
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
 	.  reduce 1 (src line 64)
 
 
@@ -123,8 +124,8 @@ state 12
 	selector:  Dot.LeftBracket Colon expr RightBracket sub_selector 
 	selector:  Dot.LeftBracket expr Colon RightBracket sub_selector 
 
-	LeftBracket  shift 30
-	Identifier  shift 29
+	LeftBracket  shift 31
+	Identifier  shift 30
 	.  reduce 13 (src line 81)
 
 
@@ -132,101 +133,85 @@ state 13
 	operator:  LogNot.expr 
 
 	Dot  shift 12
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
-	expr  goto 31
+	expr  goto 32
 	literal  goto 3
 	selector  goto 4
 	operator  goto 5
 	func_call  goto 6
 
 state 14
-	operator:  LeftParens.operator RightParens 
+	operator:  NumSub.expr 
 
 	Dot  shift 12
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
 	expr  goto 33
 	literal  goto 3
 	selector  goto 4
-	operator  goto 32
+	operator  goto 5
 	func_call  goto 6
 
 state 15
-	func_call:  Identifier.LeftParens args RightParens 
-
-	LeftParens  shift 34
-	.  error
-
-
-state 16
-	expr:  expr Pipe.expr 
+	operator:  LeftParens.operator RightParens 
 
 	Dot  shift 12
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
 	expr  goto 35
 	literal  goto 3
 	selector  goto 4
-	operator  goto 5
+	operator  goto 34
 	func_call  goto 6
 
-state 17
-	operator:  expr LogAnd.expr 
+state 16
+	func_call:  Identifier.LeftParens args RightParens 
 
-	Dot  shift 12
-	LeftParens  shift 14
-	Null  shift 11
-	Bool  shift 7
-	Identifier  shift 15
-	String  shift 8
-	Int  shift 9
-	Float  shift 10
-	LogNot  shift 13
+	LeftParens  shift 36
 	.  error
 
-	expr  goto 36
-	literal  goto 3
-	selector  goto 4
-	operator  goto 5
-	func_call  goto 6
 
-state 18
-	operator:  expr LogOr.expr 
+state 17
+	expr:  expr Pipe.expr 
 
 	Dot  shift 12
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
 	expr  goto 37
@@ -235,18 +220,19 @@ state 18
 	operator  goto 5
 	func_call  goto 6
 
-state 19
-	operator:  expr NumAdd.expr 
+state 18
+	operator:  expr LogAnd.expr 
 
 	Dot  shift 12
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
 	expr  goto 38
@@ -255,18 +241,19 @@ state 19
 	operator  goto 5
 	func_call  goto 6
 
-state 20
-	operator:  expr NumSub.expr 
+state 19
+	operator:  expr LogOr.expr 
 
 	Dot  shift 12
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
 	expr  goto 39
@@ -275,18 +262,19 @@ state 20
 	operator  goto 5
 	func_call  goto 6
 
-state 21
-	operator:  expr NumDiv.expr 
+state 20
+	operator:  expr NumAdd.expr 
 
 	Dot  shift 12
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
 	expr  goto 40
@@ -295,18 +283,19 @@ state 21
 	operator  goto 5
 	func_call  goto 6
 
-state 22
-	operator:  expr NumMul.expr 
+state 21
+	operator:  expr NumSub.expr 
 
 	Dot  shift 12
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
 	expr  goto 41
@@ -315,18 +304,19 @@ state 22
 	operator  goto 5
 	func_call  goto 6
 
-state 23
-	operator:  expr CmpEq.expr 
+state 22
+	operator:  expr NumDiv.expr 
 
 	Dot  shift 12
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
 	expr  goto 42
@@ -335,18 +325,19 @@ state 23
 	operator  goto 5
 	func_call  goto 6
 
-state 24
-	operator:  expr CmpNotEq.expr 
+state 23
+	operator:  expr NumMul.expr 
 
 	Dot  shift 12
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
 	expr  goto 43
@@ -355,18 +346,19 @@ state 24
 	operator  goto 5
 	func_call  goto 6
 
-state 25
-	operator:  expr CmpGt.expr 
+state 24
+	operator:  expr CmpEq.expr 
 
 	Dot  shift 12
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
 	expr  goto 44
@@ -375,18 +367,19 @@ state 25
 	operator  goto 5
 	func_call  goto 6
 
-state 26
-	operator:  expr CmpGtOrEq.expr 
+state 25
+	operator:  expr CmpNotEq.expr 
 
 	Dot  shift 12
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
 	expr  goto 45
@@ -395,18 +388,19 @@ state 26
 	operator  goto 5
 	func_call  goto 6
 
-state 27
-	operator:  expr CmpLs.expr 
+state 26
+	operator:  expr CmpGt.expr 
 
 	Dot  shift 12
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
 	expr  goto 46
@@ -415,18 +409,19 @@ state 27
 	operator  goto 5
 	func_call  goto 6
 
-state 28
-	operator:  expr CmpLsOrEq.expr 
+state 27
+	operator:  expr CmpGtOrEq.expr 
 
 	Dot  shift 12
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
 	expr  goto 47
@@ -435,17 +430,59 @@ state 28
 	operator  goto 5
 	func_call  goto 6
 
+state 28
+	operator:  expr CmpLs.expr 
+
+	Dot  shift 12
+	LeftParens  shift 15
+	Null  shift 11
+	Bool  shift 7
+	Identifier  shift 16
+	String  shift 8
+	Int  shift 9
+	Float  shift 10
+	LogNot  shift 13
+	NumSub  shift 14
+	.  error
+
+	expr  goto 48
+	literal  goto 3
+	selector  goto 4
+	operator  goto 5
+	func_call  goto 6
+
 state 29
+	operator:  expr CmpLsOrEq.expr 
+
+	Dot  shift 12
+	LeftParens  shift 15
+	Null  shift 11
+	Bool  shift 7
+	Identifier  shift 16
+	String  shift 8
+	Int  shift 9
+	Float  shift 10
+	LogNot  shift 13
+	NumSub  shift 14
+	.  error
+
+	expr  goto 49
+	literal  goto 3
+	selector  goto 4
+	operator  goto 5
+	func_call  goto 6
+
+state 30
 	selector:  Dot Identifier.sub_selector 
 	sub_selector: .    (26)
 
-	Dot  shift 49
-	LeftBracket  shift 50
+	Dot  shift 51
+	LeftBracket  shift 52
 	.  reduce 26 (src line 95)
 
-	sub_selector  goto 48
+	sub_selector  goto 50
 
-state 30
+state 31
 	selector:  Dot LeftBracket.RightBracket sub_selector 
 	selector:  Dot LeftBracket.expr RightBracket sub_selector 
 	selector:  Dot LeftBracket.expr Colon expr RightBracket sub_selector 
@@ -453,25 +490,26 @@ state 30
 	selector:  Dot LeftBracket.expr Colon RightBracket sub_selector 
 
 	Dot  shift 12
-	RightBracket  shift 51
-	LeftParens  shift 14
-	Colon  shift 53
+	RightBracket  shift 53
+	LeftParens  shift 15
+	Colon  shift 55
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
-	expr  goto 52
+	expr  goto 54
 	literal  goto 3
 	selector  goto 4
 	operator  goto 5
 	func_call  goto 6
 
-state 31
+state 32
 	expr:  expr.Pipe expr 
 	operator:  LogNot expr.    (27)
 	operator:  expr.LogAnd expr 
@@ -487,28 +525,49 @@ state 31
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
 
-	CmpEq  shift 23
-	CmpNotEq  shift 24
-	CmpGt  shift 25
-	CmpGtOrEq  shift 26
-	CmpLs  shift 27
-	CmpLsOrEq  shift 28
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
+	CmpEq  shift 24
+	CmpNotEq  shift 25
+	CmpGt  shift 26
+	CmpGtOrEq  shift 27
+	CmpLs  shift 28
+	CmpLsOrEq  shift 29
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
 	.  reduce 27 (src line 97)
 
 
-state 32
+state 33
+	expr:  expr.Pipe expr 
+	operator:  expr.LogAnd expr 
+	operator:  expr.LogOr expr 
+	operator:  NumSub expr.    (30)
+	operator:  expr.NumAdd expr 
+	operator:  expr.NumSub expr 
+	operator:  expr.NumDiv expr 
+	operator:  expr.NumMul expr 
+	operator:  expr.CmpEq expr 
+	operator:  expr.CmpNotEq expr 
+	operator:  expr.CmpGt expr 
+	operator:  expr.CmpGtOrEq expr 
+	operator:  expr.CmpLs expr 
+	operator:  expr.CmpLsOrEq expr 
+
+	NumMul  shift 23
+	NumDiv  shift 22
+	.  reduce 30 (src line 100)
+
+
+state 34
 	expr:  operator.    (5)
 	operator:  LeftParens operator.RightParens 
 
-	RightParens  shift 54
+	RightParens  shift 56
 	.  reduce 5 (src line 69)
 
 
-state 33
+state 35
 	expr:  expr.Pipe expr 
 	operator:  expr.LogAnd expr 
 	operator:  expr.LogOr expr 
@@ -523,44 +582,45 @@ state 33
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
 
-	Pipe  shift 16
-	LogOr  shift 18
-	LogAnd  shift 17
-	CmpEq  shift 23
-	CmpNotEq  shift 24
-	CmpGt  shift 25
-	CmpGtOrEq  shift 26
-	CmpLs  shift 27
-	CmpLsOrEq  shift 28
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
+	Pipe  shift 17
+	LogOr  shift 19
+	LogAnd  shift 18
+	CmpEq  shift 24
+	CmpNotEq  shift 25
+	CmpGt  shift 26
+	CmpGtOrEq  shift 27
+	CmpLs  shift 28
+	CmpLsOrEq  shift 29
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
 	.  error
 
 
-state 34
+state 36
 	func_call:  Identifier LeftParens.args RightParens 
 
 	Dot  shift 12
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
-	expr  goto 56
+	expr  goto 58
 	literal  goto 3
 	selector  goto 4
 	operator  goto 5
 	func_call  goto 6
-	args  goto 55
+	args  goto 57
 
-state 35
+state 37
 	expr:  expr.Pipe expr 
 	expr:  expr Pipe expr.    (7)
 	operator:  expr.LogAnd expr 
@@ -576,23 +636,23 @@ state 35
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
 
-	Pipe  shift 16
-	LogOr  shift 18
-	LogAnd  shift 17
-	CmpEq  shift 23
-	CmpNotEq  shift 24
-	CmpGt  shift 25
-	CmpGtOrEq  shift 26
-	CmpLs  shift 27
-	CmpLsOrEq  shift 28
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
+	Pipe  shift 17
+	LogOr  shift 19
+	LogAnd  shift 18
+	CmpEq  shift 24
+	CmpNotEq  shift 25
+	CmpGt  shift 26
+	CmpGtOrEq  shift 27
+	CmpLs  shift 28
+	CmpLsOrEq  shift 29
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
 	.  reduce 7 (src line 71)
 
 
-state 36
+state 38
 	expr:  expr.Pipe expr 
 	operator:  expr.LogAnd expr 
 	operator:  expr LogAnd expr.    (28)
@@ -608,20 +668,20 @@ state 36
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
 
-	CmpEq  shift 23
-	CmpNotEq  shift 24
-	CmpGt  shift 25
-	CmpGtOrEq  shift 26
-	CmpLs  shift 27
-	CmpLsOrEq  shift 28
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
+	CmpEq  shift 24
+	CmpNotEq  shift 25
+	CmpGt  shift 26
+	CmpGtOrEq  shift 27
+	CmpLs  shift 28
+	CmpLsOrEq  shift 29
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
 	.  reduce 28 (src line 98)
 
 
-state 37
+state 39
 	expr:  expr.Pipe expr 
 	operator:  expr.LogAnd expr 
 	operator:  expr.LogOr expr 
@@ -637,61 +697,18 @@ state 37
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
 
-	LogAnd  shift 17
-	CmpEq  shift 23
-	CmpNotEq  shift 24
-	CmpGt  shift 25
-	CmpGtOrEq  shift 26
-	CmpLs  shift 27
-	CmpLsOrEq  shift 28
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
+	LogAnd  shift 18
+	CmpEq  shift 24
+	CmpNotEq  shift 25
+	CmpGt  shift 26
+	CmpGtOrEq  shift 27
+	CmpLs  shift 28
+	CmpLsOrEq  shift 29
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
 	.  reduce 29 (src line 99)
-
-
-state 38
-	expr:  expr.Pipe expr 
-	operator:  expr.LogAnd expr 
-	operator:  expr.LogOr expr 
-	operator:  expr.NumAdd expr 
-	operator:  expr NumAdd expr.    (30)
-	operator:  expr.NumSub expr 
-	operator:  expr.NumDiv expr 
-	operator:  expr.NumMul expr 
-	operator:  expr.CmpEq expr 
-	operator:  expr.CmpNotEq expr 
-	operator:  expr.CmpGt expr 
-	operator:  expr.CmpGtOrEq expr 
-	operator:  expr.CmpLs expr 
-	operator:  expr.CmpLsOrEq expr 
-
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
-	.  reduce 30 (src line 100)
-
-
-state 39
-	expr:  expr.Pipe expr 
-	operator:  expr.LogAnd expr 
-	operator:  expr.LogOr expr 
-	operator:  expr.NumAdd expr 
-	operator:  expr.NumSub expr 
-	operator:  expr NumSub expr.    (31)
-	operator:  expr.NumDiv expr 
-	operator:  expr.NumMul expr 
-	operator:  expr.CmpEq expr 
-	operator:  expr.CmpNotEq expr 
-	operator:  expr.CmpGt expr 
-	operator:  expr.CmpGtOrEq expr 
-	operator:  expr.CmpLs expr 
-	operator:  expr.CmpLsOrEq expr 
-
-	NumMul  shift 22
-	NumDiv  shift 21
-	.  reduce 31 (src line 101)
 
 
 state 40
@@ -699,9 +716,9 @@ state 40
 	operator:  expr.LogAnd expr 
 	operator:  expr.LogOr expr 
 	operator:  expr.NumAdd expr 
+	operator:  expr NumAdd expr.    (31)
 	operator:  expr.NumSub expr 
 	operator:  expr.NumDiv expr 
-	operator:  expr NumDiv expr.    (32)
 	operator:  expr.NumMul expr 
 	operator:  expr.CmpEq expr 
 	operator:  expr.CmpNotEq expr 
@@ -710,7 +727,10 @@ state 40
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
 
-	.  reduce 32 (src line 102)
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
+	.  reduce 31 (src line 101)
 
 
 state 41
@@ -719,9 +739,9 @@ state 41
 	operator:  expr.LogOr expr 
 	operator:  expr.NumAdd expr 
 	operator:  expr.NumSub expr 
+	operator:  expr NumSub expr.    (32)
 	operator:  expr.NumDiv expr 
 	operator:  expr.NumMul expr 
-	operator:  expr NumMul expr.    (33)
 	operator:  expr.CmpEq expr 
 	operator:  expr.CmpNotEq expr 
 	operator:  expr.CmpGt expr 
@@ -729,8 +749,9 @@ state 41
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
 
-	NumDiv  shift 21
-	.  reduce 33 (src line 103)
+	NumMul  shift 23
+	NumDiv  shift 22
+	.  reduce 32 (src line 102)
 
 
 state 42
@@ -740,26 +761,16 @@ state 42
 	operator:  expr.NumAdd expr 
 	operator:  expr.NumSub expr 
 	operator:  expr.NumDiv expr 
+	operator:  expr NumDiv expr.    (33)
 	operator:  expr.NumMul expr 
 	operator:  expr.CmpEq expr 
-	operator:  expr CmpEq expr.    (34)
 	operator:  expr.CmpNotEq expr 
 	operator:  expr.CmpGt expr 
 	operator:  expr.CmpGtOrEq expr 
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
 
-	CmpEq  error
-	CmpNotEq  error
-	CmpGt  shift 25
-	CmpGtOrEq  shift 26
-	CmpLs  shift 27
-	CmpLsOrEq  shift 28
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
-	.  reduce 34 (src line 104)
+	.  reduce 33 (src line 103)
 
 
 state 43
@@ -770,25 +781,16 @@ state 43
 	operator:  expr.NumSub expr 
 	operator:  expr.NumDiv expr 
 	operator:  expr.NumMul expr 
+	operator:  expr NumMul expr.    (34)
 	operator:  expr.CmpEq expr 
 	operator:  expr.CmpNotEq expr 
-	operator:  expr CmpNotEq expr.    (35)
 	operator:  expr.CmpGt expr 
 	operator:  expr.CmpGtOrEq expr 
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
 
-	CmpEq  error
-	CmpNotEq  error
-	CmpGt  shift 25
-	CmpGtOrEq  shift 26
-	CmpLs  shift 27
-	CmpLsOrEq  shift 28
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
-	.  reduce 35 (src line 105)
+	NumDiv  shift 22
+	.  reduce 34 (src line 104)
 
 
 state 44
@@ -800,22 +802,24 @@ state 44
 	operator:  expr.NumDiv expr 
 	operator:  expr.NumMul expr 
 	operator:  expr.CmpEq expr 
+	operator:  expr CmpEq expr.    (35)
 	operator:  expr.CmpNotEq expr 
 	operator:  expr.CmpGt expr 
-	operator:  expr CmpGt expr.    (36)
 	operator:  expr.CmpGtOrEq expr 
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
 
-	CmpGt  error
-	CmpGtOrEq  error
-	CmpLs  error
-	CmpLsOrEq  error
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
-	.  reduce 36 (src line 106)
+	CmpEq  error
+	CmpNotEq  error
+	CmpGt  shift 26
+	CmpGtOrEq  shift 27
+	CmpLs  shift 28
+	CmpLsOrEq  shift 29
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
+	.  reduce 35 (src line 105)
 
 
 state 45
@@ -828,21 +832,23 @@ state 45
 	operator:  expr.NumMul expr 
 	operator:  expr.CmpEq expr 
 	operator:  expr.CmpNotEq expr 
+	operator:  expr CmpNotEq expr.    (36)
 	operator:  expr.CmpGt expr 
 	operator:  expr.CmpGtOrEq expr 
-	operator:  expr CmpGtOrEq expr.    (37)
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
 
-	CmpGt  error
-	CmpGtOrEq  error
-	CmpLs  error
-	CmpLsOrEq  error
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
-	.  reduce 37 (src line 107)
+	CmpEq  error
+	CmpNotEq  error
+	CmpGt  shift 26
+	CmpGtOrEq  shift 27
+	CmpLs  shift 28
+	CmpLsOrEq  shift 29
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
+	.  reduce 36 (src line 106)
 
 
 state 46
@@ -856,20 +862,20 @@ state 46
 	operator:  expr.CmpEq expr 
 	operator:  expr.CmpNotEq expr 
 	operator:  expr.CmpGt expr 
+	operator:  expr CmpGt expr.    (37)
 	operator:  expr.CmpGtOrEq expr 
 	operator:  expr.CmpLs expr 
-	operator:  expr CmpLs expr.    (38)
 	operator:  expr.CmpLsOrEq expr 
 
 	CmpGt  error
 	CmpGtOrEq  error
 	CmpLs  error
 	CmpLsOrEq  error
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
-	.  reduce 38 (src line 108)
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
+	.  reduce 37 (src line 107)
 
 
 state 47
@@ -884,35 +890,89 @@ state 47
 	operator:  expr.CmpNotEq expr 
 	operator:  expr.CmpGt expr 
 	operator:  expr.CmpGtOrEq expr 
+	operator:  expr CmpGtOrEq expr.    (38)
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
-	operator:  expr CmpLsOrEq expr.    (39)
 
 	CmpGt  error
 	CmpGtOrEq  error
 	CmpLs  error
 	CmpLsOrEq  error
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
-	.  reduce 39 (src line 109)
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
+	.  reduce 38 (src line 108)
 
 
 state 48
+	expr:  expr.Pipe expr 
+	operator:  expr.LogAnd expr 
+	operator:  expr.LogOr expr 
+	operator:  expr.NumAdd expr 
+	operator:  expr.NumSub expr 
+	operator:  expr.NumDiv expr 
+	operator:  expr.NumMul expr 
+	operator:  expr.CmpEq expr 
+	operator:  expr.CmpNotEq expr 
+	operator:  expr.CmpGt expr 
+	operator:  expr.CmpGtOrEq expr 
+	operator:  expr.CmpLs expr 
+	operator:  expr CmpLs expr.    (39)
+	operator:  expr.CmpLsOrEq expr 
+
+	CmpGt  error
+	CmpGtOrEq  error
+	CmpLs  error
+	CmpLsOrEq  error
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
+	.  reduce 39 (src line 109)
+
+
+state 49
+	expr:  expr.Pipe expr 
+	operator:  expr.LogAnd expr 
+	operator:  expr.LogOr expr 
+	operator:  expr.NumAdd expr 
+	operator:  expr.NumSub expr 
+	operator:  expr.NumDiv expr 
+	operator:  expr.NumMul expr 
+	operator:  expr.CmpEq expr 
+	operator:  expr.CmpNotEq expr 
+	operator:  expr.CmpGt expr 
+	operator:  expr.CmpGtOrEq expr 
+	operator:  expr.CmpLs expr 
+	operator:  expr.CmpLsOrEq expr 
+	operator:  expr CmpLsOrEq expr.    (40)
+
+	CmpGt  error
+	CmpGtOrEq  error
+	CmpLs  error
+	CmpLsOrEq  error
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
+	.  reduce 40 (src line 110)
+
+
+state 50
 	selector:  Dot Identifier sub_selector.    (14)
 
 	.  reduce 14 (src line 82)
 
 
-state 49
+state 51
 	sub_selector:  Dot.Identifier sub_selector 
 
-	Identifier  shift 57
+	Identifier  shift 59
 	.  error
 
 
-state 50
+state 52
 	sub_selector:  LeftBracket.RightBracket sub_selector 
 	sub_selector:  LeftBracket.expr RightBracket sub_selector 
 	sub_selector:  LeftBracket.expr Colon expr RightBracket sub_selector 
@@ -920,35 +980,36 @@ state 50
 	sub_selector:  LeftBracket.expr Colon RightBracket sub_selector 
 
 	Dot  shift 12
-	RightBracket  shift 58
-	LeftParens  shift 14
-	Colon  shift 60
+	RightBracket  shift 60
+	LeftParens  shift 15
+	Colon  shift 62
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
-	expr  goto 59
+	expr  goto 61
 	literal  goto 3
 	selector  goto 4
 	operator  goto 5
 	func_call  goto 6
 
-state 51
+state 53
 	selector:  Dot LeftBracket RightBracket.sub_selector 
 	sub_selector: .    (26)
 
-	Dot  shift 49
-	LeftBracket  shift 50
+	Dot  shift 51
+	LeftBracket  shift 52
 	.  reduce 26 (src line 95)
 
-	sub_selector  goto 61
+	sub_selector  goto 63
 
-state 52
+state 54
 	expr:  expr.Pipe expr 
 	selector:  Dot LeftBracket expr.RightBracket sub_selector 
 	selector:  Dot LeftBracket expr.Colon expr RightBracket sub_selector 
@@ -966,58 +1027,59 @@ state 52
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
 
-	RightBracket  shift 62
-	Colon  shift 63
-	Pipe  shift 16
-	LogOr  shift 18
-	LogAnd  shift 17
-	CmpEq  shift 23
-	CmpNotEq  shift 24
-	CmpGt  shift 25
-	CmpGtOrEq  shift 26
-	CmpLs  shift 27
-	CmpLsOrEq  shift 28
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
+	RightBracket  shift 64
+	Colon  shift 65
+	Pipe  shift 17
+	LogOr  shift 19
+	LogAnd  shift 18
+	CmpEq  shift 24
+	CmpNotEq  shift 25
+	CmpGt  shift 26
+	CmpGtOrEq  shift 27
+	CmpLs  shift 28
+	CmpLsOrEq  shift 29
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
 	.  error
 
 
-state 53
+state 55
 	selector:  Dot LeftBracket Colon.expr RightBracket sub_selector 
 
 	Dot  shift 12
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
-	expr  goto 64
+	expr  goto 66
 	literal  goto 3
 	selector  goto 4
 	operator  goto 5
 	func_call  goto 6
 
-state 54
-	operator:  LeftParens operator RightParens.    (40)
+state 56
+	operator:  LeftParens operator RightParens.    (41)
 
-	.  reduce 40 (src line 110)
+	.  reduce 41 (src line 111)
 
 
-state 55
+state 57
 	func_call:  Identifier LeftParens args.RightParens 
 
-	RightParens  shift 65
+	RightParens  shift 67
 	.  error
 
 
-state 56
+state 58
 	expr:  expr.Pipe expr 
 	operator:  expr.LogAnd expr 
 	operator:  expr.LogOr expr 
@@ -1031,47 +1093,47 @@ state 56
 	operator:  expr.CmpGtOrEq expr 
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
-	args:  expr.    (42)
+	args:  expr.    (43)
 	args:  expr.Comma args 
 
-	Pipe  shift 16
-	Comma  shift 66
-	LogOr  shift 18
-	LogAnd  shift 17
-	CmpEq  shift 23
-	CmpNotEq  shift 24
-	CmpGt  shift 25
-	CmpGtOrEq  shift 26
-	CmpLs  shift 27
-	CmpLsOrEq  shift 28
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
-	.  reduce 42 (src line 115)
+	Pipe  shift 17
+	Comma  shift 68
+	LogOr  shift 19
+	LogAnd  shift 18
+	CmpEq  shift 24
+	CmpNotEq  shift 25
+	CmpGt  shift 26
+	CmpGtOrEq  shift 27
+	CmpLs  shift 28
+	CmpLsOrEq  shift 29
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
+	.  reduce 43 (src line 116)
 
 
-state 57
+state 59
 	sub_selector:  Dot Identifier.sub_selector 
 	sub_selector: .    (26)
 
-	Dot  shift 49
-	LeftBracket  shift 50
+	Dot  shift 51
+	LeftBracket  shift 52
 	.  reduce 26 (src line 95)
 
-	sub_selector  goto 67
+	sub_selector  goto 69
 
-state 58
+state 60
 	sub_selector:  LeftBracket RightBracket.sub_selector 
 	sub_selector: .    (26)
 
-	Dot  shift 49
-	LeftBracket  shift 50
+	Dot  shift 51
+	LeftBracket  shift 52
 	.  reduce 26 (src line 95)
 
-	sub_selector  goto 68
+	sub_selector  goto 70
 
-state 59
+state 61
 	expr:  expr.Pipe expr 
 	sub_selector:  LeftBracket expr.RightBracket sub_selector 
 	sub_selector:  LeftBracket expr.Colon expr RightBracket sub_selector 
@@ -1089,74 +1151,37 @@ state 59
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
 
-	RightBracket  shift 69
-	Colon  shift 70
-	Pipe  shift 16
-	LogOr  shift 18
-	LogAnd  shift 17
-	CmpEq  shift 23
-	CmpNotEq  shift 24
-	CmpGt  shift 25
-	CmpGtOrEq  shift 26
-	CmpLs  shift 27
-	CmpLsOrEq  shift 28
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
+	RightBracket  shift 71
+	Colon  shift 72
+	Pipe  shift 17
+	LogOr  shift 19
+	LogAnd  shift 18
+	CmpEq  shift 24
+	CmpNotEq  shift 25
+	CmpGt  shift 26
+	CmpGtOrEq  shift 27
+	CmpLs  shift 28
+	CmpLsOrEq  shift 29
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
 	.  error
-
-
-state 60
-	sub_selector:  LeftBracket Colon.expr RightBracket sub_selector 
-
-	Dot  shift 12
-	LeftParens  shift 14
-	Null  shift 11
-	Bool  shift 7
-	Identifier  shift 15
-	String  shift 8
-	Int  shift 9
-	Float  shift 10
-	LogNot  shift 13
-	.  error
-
-	expr  goto 71
-	literal  goto 3
-	selector  goto 4
-	operator  goto 5
-	func_call  goto 6
-
-state 61
-	selector:  Dot LeftBracket RightBracket sub_selector.    (15)
-
-	.  reduce 15 (src line 83)
 
 
 state 62
-	selector:  Dot LeftBracket expr RightBracket.sub_selector 
-	sub_selector: .    (26)
-
-	Dot  shift 49
-	LeftBracket  shift 50
-	.  reduce 26 (src line 95)
-
-	sub_selector  goto 72
-
-state 63
-	selector:  Dot LeftBracket expr Colon.expr RightBracket sub_selector 
-	selector:  Dot LeftBracket expr Colon.RightBracket sub_selector 
+	sub_selector:  LeftBracket Colon.expr RightBracket sub_selector 
 
 	Dot  shift 12
-	RightBracket  shift 74
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
 	expr  goto 73
@@ -1165,7 +1190,46 @@ state 63
 	operator  goto 5
 	func_call  goto 6
 
+state 63
+	selector:  Dot LeftBracket RightBracket sub_selector.    (15)
+
+	.  reduce 15 (src line 83)
+
+
 state 64
+	selector:  Dot LeftBracket expr RightBracket.sub_selector 
+	sub_selector: .    (26)
+
+	Dot  shift 51
+	LeftBracket  shift 52
+	.  reduce 26 (src line 95)
+
+	sub_selector  goto 74
+
+state 65
+	selector:  Dot LeftBracket expr Colon.expr RightBracket sub_selector 
+	selector:  Dot LeftBracket expr Colon.RightBracket sub_selector 
+
+	Dot  shift 12
+	RightBracket  shift 76
+	LeftParens  shift 15
+	Null  shift 11
+	Bool  shift 7
+	Identifier  shift 16
+	String  shift 8
+	Int  shift 9
+	Float  shift 10
+	LogNot  shift 13
+	NumSub  shift 14
+	.  error
+
+	expr  goto 75
+	literal  goto 3
+	selector  goto 4
+	operator  goto 5
+	func_call  goto 6
+
+state 66
 	expr:  expr.Pipe expr 
 	selector:  Dot LeftBracket Colon expr.RightBracket sub_selector 
 	operator:  expr.LogAnd expr 
@@ -1181,95 +1245,97 @@ state 64
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
 
-	RightBracket  shift 75
-	Pipe  shift 16
-	LogOr  shift 18
-	LogAnd  shift 17
-	CmpEq  shift 23
-	CmpNotEq  shift 24
-	CmpGt  shift 25
-	CmpGtOrEq  shift 26
-	CmpLs  shift 27
-	CmpLsOrEq  shift 28
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
+	RightBracket  shift 77
+	Pipe  shift 17
+	LogOr  shift 19
+	LogAnd  shift 18
+	CmpEq  shift 24
+	CmpNotEq  shift 25
+	CmpGt  shift 26
+	CmpGtOrEq  shift 27
+	CmpLs  shift 28
+	CmpLsOrEq  shift 29
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
 	.  error
 
 
-state 65
-	func_call:  Identifier LeftParens args RightParens.    (41)
+state 67
+	func_call:  Identifier LeftParens args RightParens.    (42)
 
-	.  reduce 41 (src line 113)
+	.  reduce 42 (src line 114)
 
 
-state 66
+state 68
 	args:  expr Comma.args 
 
 	Dot  shift 12
-	LeftParens  shift 14
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
-	expr  goto 56
+	expr  goto 58
 	literal  goto 3
 	selector  goto 4
 	operator  goto 5
 	func_call  goto 6
-	args  goto 76
+	args  goto 78
 
-state 67
+state 69
 	sub_selector:  Dot Identifier sub_selector.    (20)
 
 	.  reduce 20 (src line 89)
 
 
-state 68
+state 70
 	sub_selector:  LeftBracket RightBracket sub_selector.    (21)
 
 	.  reduce 21 (src line 90)
 
 
-state 69
+state 71
 	sub_selector:  LeftBracket expr RightBracket.sub_selector 
 	sub_selector: .    (26)
 
-	Dot  shift 49
-	LeftBracket  shift 50
+	Dot  shift 51
+	LeftBracket  shift 52
 	.  reduce 26 (src line 95)
 
-	sub_selector  goto 77
+	sub_selector  goto 79
 
-state 70
+state 72
 	sub_selector:  LeftBracket expr Colon.expr RightBracket sub_selector 
 	sub_selector:  LeftBracket expr Colon.RightBracket sub_selector 
 
 	Dot  shift 12
-	RightBracket  shift 79
-	LeftParens  shift 14
+	RightBracket  shift 81
+	LeftParens  shift 15
 	Null  shift 11
 	Bool  shift 7
-	Identifier  shift 15
+	Identifier  shift 16
 	String  shift 8
 	Int  shift 9
 	Float  shift 10
 	LogNot  shift 13
+	NumSub  shift 14
 	.  error
 
-	expr  goto 78
+	expr  goto 80
 	literal  goto 3
 	selector  goto 4
 	operator  goto 5
 	func_call  goto 6
 
-state 71
+state 73
 	expr:  expr.Pipe expr 
 	sub_selector:  LeftBracket Colon expr.RightBracket sub_selector 
 	operator:  expr.LogAnd expr 
@@ -1285,30 +1351,30 @@ state 71
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
 
-	RightBracket  shift 80
-	Pipe  shift 16
-	LogOr  shift 18
-	LogAnd  shift 17
-	CmpEq  shift 23
-	CmpNotEq  shift 24
-	CmpGt  shift 25
-	CmpGtOrEq  shift 26
-	CmpLs  shift 27
-	CmpLsOrEq  shift 28
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
+	RightBracket  shift 82
+	Pipe  shift 17
+	LogOr  shift 19
+	LogAnd  shift 18
+	CmpEq  shift 24
+	CmpNotEq  shift 25
+	CmpGt  shift 26
+	CmpGtOrEq  shift 27
+	CmpLs  shift 28
+	CmpLsOrEq  shift 29
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
 	.  error
 
 
-state 72
+state 74
 	selector:  Dot LeftBracket expr RightBracket sub_selector.    (16)
 
 	.  reduce 16 (src line 84)
 
 
-state 73
+state 75
 	expr:  expr.Pipe expr 
 	selector:  Dot LeftBracket expr Colon expr.RightBracket sub_selector 
 	operator:  expr.LogAnd expr 
@@ -1324,56 +1390,56 @@ state 73
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
 
-	RightBracket  shift 81
-	Pipe  shift 16
-	LogOr  shift 18
-	LogAnd  shift 17
-	CmpEq  shift 23
-	CmpNotEq  shift 24
-	CmpGt  shift 25
-	CmpGtOrEq  shift 26
-	CmpLs  shift 27
-	CmpLsOrEq  shift 28
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
+	RightBracket  shift 83
+	Pipe  shift 17
+	LogOr  shift 19
+	LogAnd  shift 18
+	CmpEq  shift 24
+	CmpNotEq  shift 25
+	CmpGt  shift 26
+	CmpGtOrEq  shift 27
+	CmpLs  shift 28
+	CmpLsOrEq  shift 29
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
 	.  error
 
 
-state 74
+state 76
 	selector:  Dot LeftBracket expr Colon RightBracket.sub_selector 
 	sub_selector: .    (26)
 
-	Dot  shift 49
-	LeftBracket  shift 50
+	Dot  shift 51
+	LeftBracket  shift 52
 	.  reduce 26 (src line 95)
 
-	sub_selector  goto 82
+	sub_selector  goto 84
 
-state 75
+state 77
 	selector:  Dot LeftBracket Colon expr RightBracket.sub_selector 
 	sub_selector: .    (26)
 
-	Dot  shift 49
-	LeftBracket  shift 50
+	Dot  shift 51
+	LeftBracket  shift 52
 	.  reduce 26 (src line 95)
 
-	sub_selector  goto 83
+	sub_selector  goto 85
 
-state 76
-	args:  expr Comma args.    (43)
+state 78
+	args:  expr Comma args.    (44)
 
-	.  reduce 43 (src line 116)
+	.  reduce 44 (src line 117)
 
 
-state 77
+state 79
 	sub_selector:  LeftBracket expr RightBracket sub_selector.    (22)
 
 	.  reduce 22 (src line 91)
 
 
-state 78
+state 80
 	expr:  expr.Pipe expr 
 	sub_selector:  LeftBracket expr Colon expr.RightBracket sub_selector 
 	operator:  expr.LogAnd expr 
@@ -1389,108 +1455,108 @@ state 78
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
 
-	RightBracket  shift 84
-	Pipe  shift 16
-	LogOr  shift 18
-	LogAnd  shift 17
-	CmpEq  shift 23
-	CmpNotEq  shift 24
-	CmpGt  shift 25
-	CmpGtOrEq  shift 26
-	CmpLs  shift 27
-	CmpLsOrEq  shift 28
-	NumAdd  shift 19
-	NumSub  shift 20
-	NumMul  shift 22
-	NumDiv  shift 21
+	RightBracket  shift 86
+	Pipe  shift 17
+	LogOr  shift 19
+	LogAnd  shift 18
+	CmpEq  shift 24
+	CmpNotEq  shift 25
+	CmpGt  shift 26
+	CmpGtOrEq  shift 27
+	CmpLs  shift 28
+	CmpLsOrEq  shift 29
+	NumAdd  shift 20
+	NumSub  shift 21
+	NumMul  shift 23
+	NumDiv  shift 22
 	.  error
 
 
-state 79
+state 81
 	sub_selector:  LeftBracket expr Colon RightBracket.sub_selector 
 	sub_selector: .    (26)
 
-	Dot  shift 49
-	LeftBracket  shift 50
-	.  reduce 26 (src line 95)
-
-	sub_selector  goto 85
-
-state 80
-	sub_selector:  LeftBracket Colon expr RightBracket.sub_selector 
-	sub_selector: .    (26)
-
-	Dot  shift 49
-	LeftBracket  shift 50
-	.  reduce 26 (src line 95)
-
-	sub_selector  goto 86
-
-state 81
-	selector:  Dot LeftBracket expr Colon expr RightBracket.sub_selector 
-	sub_selector: .    (26)
-
-	Dot  shift 49
-	LeftBracket  shift 50
+	Dot  shift 51
+	LeftBracket  shift 52
 	.  reduce 26 (src line 95)
 
 	sub_selector  goto 87
 
 state 82
+	sub_selector:  LeftBracket Colon expr RightBracket.sub_selector 
+	sub_selector: .    (26)
+
+	Dot  shift 51
+	LeftBracket  shift 52
+	.  reduce 26 (src line 95)
+
+	sub_selector  goto 88
+
+state 83
+	selector:  Dot LeftBracket expr Colon expr RightBracket.sub_selector 
+	sub_selector: .    (26)
+
+	Dot  shift 51
+	LeftBracket  shift 52
+	.  reduce 26 (src line 95)
+
+	sub_selector  goto 89
+
+state 84
 	selector:  Dot LeftBracket expr Colon RightBracket sub_selector.    (19)
 
 	.  reduce 19 (src line 87)
 
 
-state 83
+state 85
 	selector:  Dot LeftBracket Colon expr RightBracket sub_selector.    (18)
 
 	.  reduce 18 (src line 86)
 
 
-state 84
+state 86
 	sub_selector:  LeftBracket expr Colon expr RightBracket.sub_selector 
 	sub_selector: .    (26)
 
-	Dot  shift 49
-	LeftBracket  shift 50
+	Dot  shift 51
+	LeftBracket  shift 52
 	.  reduce 26 (src line 95)
 
-	sub_selector  goto 88
+	sub_selector  goto 90
 
-state 85
+state 87
 	sub_selector:  LeftBracket expr Colon RightBracket sub_selector.    (25)
 
 	.  reduce 25 (src line 94)
 
 
-state 86
+state 88
 	sub_selector:  LeftBracket Colon expr RightBracket sub_selector.    (24)
 
 	.  reduce 24 (src line 93)
 
 
-state 87
+state 89
 	selector:  Dot LeftBracket expr Colon expr RightBracket sub_selector.    (17)
 
 	.  reduce 17 (src line 85)
 
 
-state 88
+state 90
 	sub_selector:  LeftBracket expr Colon expr RightBracket sub_selector.    (23)
 
 	.  reduce 23 (src line 92)
 
 
 30 terminals, 9 nonterminals
-44 grammar rules, 89/8000 states
+45 grammar rules, 91/8000 states
 0 shift/reduce, 0 reduce/reduce conflicts reported
 58 working sets used
-memory: parser 134/120000
-82 extra closures
-460 shift entries, 21 exceptions
-43 goto entries
-92 entries saved by goto default
-Optimizer space used: output 359/120000
-359 table entries, 105 zero
-maximum spread: 30, maximum offset: 84
+memory: parser 139/120000
+84 extra closures
+496 shift entries, 21 exceptions
+44 goto entries
+96 entries saved by goto default
+Optimizer space used: output 371/120000
+371 table entries, 111 zero
+maximum spread: 30, maximum offset: 86

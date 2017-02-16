@@ -144,14 +144,26 @@ func TestTokenize(t *testing.T) {
 		{`0`, "0", []tok{{tokInt, "0"}}},
 		{`1`, "1", []tok{{tokInt, "1"}}},
 		{`42`, "42", []tok{{tokInt, "42"}}},
-		{`-1`, "-1", []tok{{tokInt, "-1"}}},
-		{`-42`, "-42", []tok{{tokInt, "-42"}}},
+		{`-1`, "-1", []tok{{tokNumSub, "-"}, {tokInt, "1"}}},
+		{`-42`, "-42", []tok{{tokNumSub, "-"}, {tokInt, "42"}}},
+
+		{`1-1`, "1-1", []tok{
+			{tokInt, "1"},
+			{tokNumSub, "-"},
+			{tokInt, "1"},
+		}},
 
 		{`0.0`, "0.0", []tok{{tokFloat, "0.0"}}},
 		{`1.0`, "1.0", []tok{{tokFloat, "1.0"}}},
 		{`42.42`, "42.42", []tok{{tokFloat, "42.42"}}},
-		{`-1.0`, "-1.0", []tok{{tokFloat, "-1.0"}}},
-		{`-42.42`, "-42.42", []tok{{tokFloat, "-42.42"}}},
+		{`-1.0`, "-1.0", []tok{{tokNumSub, "-"}, {tokFloat, "1.0"}}},
+		{`-42.42`, "-42.42", []tok{{tokNumSub, "-"}, {tokFloat, "42.42"}}},
+
+		{`1.0-1.0`, "1.0-1.0", []tok{
+			{tokFloat, "1.0"},
+			{tokNumSub, "-"},
+			{tokFloat, "1.0"},
+		}},
 
 		{
 			name: `string`,

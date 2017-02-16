@@ -27,8 +27,8 @@
 /true|false/                        { return lval.emit(yylex, Bool, tokBool) }
 /null/                              { return lval.emit(yylex, Null, tokNull) }
 /[a-zA-Z_][a-zA-Z0-9_]*/            { return lval.emit(yylex, Identifier, tokIdentifier) }
-/\-?(0|[1-9][0-9]*)\.[0-9]+/        { return lval.emit(yylex, Float, tokFloat) }
-/\-?(0|[1-9][0-9]*)/                { return lval.emit(yylex, Int, tokInt) }
+/(0|[1-9][0-9]*)\.[0-9]+/        { return lval.emit(yylex, Float, tokFloat) }
+/(0|[1-9][0-9]*)/                { return lval.emit(yylex, Int, tokInt) }
 /["]([^\\\"]|\\(a|b|f|n|r|t|v|\\|\'|"|x[0-9A-Fa-f][0-9A-Fa-f]|u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]|U[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]))*["]/   { return lval.emit(yylex, String, tokString) }
 
 /[ \n\t\r]*/          { /* discard whitespace */ }
