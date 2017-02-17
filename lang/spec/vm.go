@@ -11,6 +11,8 @@ import (
 
 	"strings"
 
+	"regexp"
+
 	"github.com/aybabtme/streamql/lang/spec/msg"
 )
 
@@ -857,31 +859,69 @@ func (vm *ASTInterpreter) evalOperator(build msg.Builder, m msg.Msg, o *Operator
 
 func (vm *ASTInterpreter) evalFuncCall(build msg.Builder, m msg.Msg, f *FuncCall, sink msg.Sink) error {
 	defer trace()()
-	arity, fn := vm.lookupFuncs(f.Name)
+	arities, fn := vm.lookupFuncs(f.Name)
 	if fn == nil {
 		return fmt.Errorf("unknown function %q", f.Name)
 	}
-	if arity != len(f.Args) {
-		return fmt.Errorf("function %q requires %d arguments, %d were given", f.Name, arity, len(f.Args))
+	for _, arity := range arities {
+		if arity == len(f.Args) {
+			return fn(build, m, f.Args, sink)
+		}
 	}
-	return fn(build, m, f.Args, sink)
+	arityString := strconv.Itoa(arities[0])
+	for i, arity := range arities[1:] {
+		if i == len(arities)-1 {
+			arityString += " or "
+		} else {
+			arityString += ", "
+		}
+		arityString += strconv.Itoa(arity)
+	}
+	return fmt.Errorf("function %q requires %s arguments, %d were given", f.Name, arityString, len(f.Args))
 }
 
 type evalFunc func(build msg.Builder, m msg.Msg, args []*Expr, sink msg.Sink) error
 
-func (vm *ASTInterpreter) lookupFuncs(name string) (int, evalFunc) {
+func (vm *ASTInterpreter) lookupFuncs(name string) ([]int, evalFunc) {
 	defer trace()()
 	switch name {
+	// not implicit unary func
 	case "select":
-		return 1, vm.evalFuncSelect
+		return []int{1, 2}, vm.evalFuncSelect
+
+	// implicit unary func
+	case "length":
+		return []int{0, 1}, vm.evalFuncLength
+	case "keys":
+		return []int{0, 1}, vm.evalFuncKeys
+
+		// not implicit binary func
+	case "regexp":
+		return []int{2}, vm.evalFuncRegexp
+	case "contains":
+		return []int{2}, vm.evalFuncContains
+
+		// implicit binary func
+	case "has":
+		return []int{1, 2}, vm.evalFuncHas
+
 	}
-	return 0, nil
+	return nil, nil
 }
 
 // == select(bool) -> msg.Msg ==
 // Emits the current message if the given expression evaluates to true.
 func (vm *ASTInterpreter) evalFuncSelect(build msg.Builder, m msg.Msg, args []*Expr, sink msg.Sink) error {
 	defer trace()()
+
+	args, toemit, ok, err := vm.implicitArgOrEvalExpr(build, "function select", m, 1, args, msg.TypeString, msg.TypeBool, msg.TypeInt, msg.TypeFloat, msg.TypeNull, msg.TypeObject, msg.TypeArray)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+
 	cond, ok, err := vm.evalExprToMsgType(build, m, args[0], "function select", msg.TypeBool)
 	if err != nil {
 		return err
@@ -890,9 +930,181 @@ func (vm *ASTInterpreter) evalFuncSelect(build msg.Builder, m msg.Msg, args []*E
 		return nil
 	}
 	if cond.BoolVal() {
-		return sink(m)
+		return sink(toemit)
 	}
 	return nil
+}
+
+// == length(string|object|array) -> int ==
+// Emits an integer representing the length of a string, the number of elements in an array or the number of keys in an object.
+func (vm *ASTInterpreter) evalFuncLength(build msg.Builder, m msg.Msg, args []*Expr, sink msg.Sink) error {
+	defer trace()()
+
+	_, arg, ok, err := vm.implicitArgOrEvalExpr(build, "function length", m, 0, args, msg.TypeString, msg.TypeObject, msg.TypeArray)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+
+	var l int64
+	switch arg.Type() {
+	case msg.TypeString:
+		l = int64(len(arg.StringVal()))
+	case msg.TypeObject:
+		l = int64(len(arg.Keys()))
+	case msg.TypeArray:
+		l = arg.Len()
+	}
+	lmsg, err := build.Int(l)
+	if err != nil {
+		return err
+	}
+	return sink(lmsg)
+}
+
+// == keys(object|array) -> array ==
+// Emits an array representing the keys an object, or the indices of an array.
+func (vm *ASTInterpreter) evalFuncKeys(build msg.Builder, m msg.Msg, args []*Expr, sink msg.Sink) error {
+	defer trace()()
+
+	_, arg, ok, err := vm.implicitArgOrEvalExpr(build, "function keys", m, 0, args, msg.TypeObject, msg.TypeArray)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+
+	var abFunc func(msg.ArrayBuilder) error
+
+	switch arg.Type() {
+	case msg.TypeObject:
+		abFunc = func(ab msg.ArrayBuilder) error {
+			keys := make([]string, len(arg.Keys()))
+			copy(keys, arg.Keys())
+			sort.Strings(keys)
+			for _, k := range keys {
+				err := ab.AddElem(func(b msg.Builder) (msg.Msg, error) {
+					return b.String(k)
+				})
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+
+	case msg.TypeArray:
+		abFunc = func(ab msg.ArrayBuilder) error {
+			for i := int64(0); i < arg.Len(); i++ {
+				err := ab.AddElem(func(b msg.Builder) (msg.Msg, error) {
+					return b.Int(i)
+				})
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}
+
+	keys, err := build.Array(abFunc)
+	if err != nil {
+		return err
+	}
+	return sink(keys)
+}
+
+// == has(object, string) -> bool ==
+// Emits a bool representing whether the object has a key.
+func (vm *ASTInterpreter) evalFuncHas(build msg.Builder, m msg.Msg, args []*Expr, sink msg.Sink) error {
+	defer trace()()
+
+	args, obj, ok, err := vm.implicitArgOrEvalExpr(build, "function has", m, 1, args, msg.TypeObject, msg.TypeArray)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+	key, ok, err := vm.evalExprToMsgType(build, m, args[0], "function has", msg.TypeString)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+	_, has := obj.Member(key.StringVal())
+	hasmsg, err := build.Bool(has)
+	if err != nil {
+		return err
+	}
+	return sink(hasmsg)
+}
+
+// == regexp(s, pattern string) -> bool ==
+// Emits a boolean: if the given regexp matches the expression.
+func (vm *ASTInterpreter) evalFuncRegexp(build msg.Builder, m msg.Msg, args []*Expr, sink msg.Sink) error {
+	defer trace()()
+
+	s, ok, err := vm.evalExprToMsgType(build, m, args[0], "function regexp", msg.TypeString)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+
+	pattern, ok, err := vm.evalExprToMsgType(build, m, args[1], "function regexp", msg.TypeString)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+
+	// figure a way to cache the compiled regexp.... if the argument is a compile time literal, for instance
+	re, err := regexp.Compile(pattern.StringVal())
+	if err != nil {
+		return vm.skipEvalWrongArgValue("function regexp", pattern.Type(), "invalid regexp: "+err.Error())
+	}
+	match, err := build.Bool(re.MatchString(s.StringVal()))
+	if err != nil {
+		return err
+	}
+	return sink(match)
+}
+
+// == contains(s, substring string) -> bool ==
+// Emits a boolean: if the given substring is found in the expression.
+func (vm *ASTInterpreter) evalFuncContains(build msg.Builder, m msg.Msg, args []*Expr, sink msg.Sink) error {
+	defer trace()()
+
+	s, ok, err := vm.evalExprToMsgType(build, m, args[0], "function contains", msg.TypeString)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+
+	substring, ok, err := vm.evalExprToMsgType(build, m, args[1], "function contains", msg.TypeString)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+
+	contains := strings.Contains(s.StringVal(), substring.StringVal())
+
+	match, err := build.Bool(contains)
+	if err != nil {
+		return err
+	}
+	return sink(match)
 }
 
 // helper
@@ -933,4 +1145,19 @@ func (vm *ASTInterpreter) evalExprToMsgType(build msg.Builder, m msg.Msg, expr *
 
 	})
 	return evaled, found, err
+}
+
+// implicitArgOrEvalExpr uses an implicit argument (the current message context) if no expression is given. otherwise it evals the
+// expression the usual way.
+func (vm *ASTInterpreter) implicitArgOrEvalExpr(build msg.Builder, action string, m msg.Msg, implIfLen int, args []*Expr, want ...msg.Type) ([]*Expr, msg.Msg, bool, error) {
+	if len(args) != implIfLen {
+		m, ok, err := vm.evalExprToMsgType(build, m, args[0], action, want...)
+		return args[1:], m, ok, err
+	}
+	for _, t := range want {
+		if m.Type() == t {
+			return args, m, true, nil
+		}
+	}
+	return nil, nil, false, vm.skipEvalWrongType(action, m.Type(), msg.TypeString, msg.TypeObject, msg.TypeArray)
 }

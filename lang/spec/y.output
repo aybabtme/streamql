@@ -194,9 +194,10 @@ state 15
 
 state 16
 	func_call:  Identifier.LeftParens args RightParens 
+	func_call:  Identifier.    (43)
 
 	LeftParens  shift 36
-	.  error
+	.  reduce 43 (src line 115)
 
 
 state 17
@@ -1093,7 +1094,7 @@ state 58
 	operator:  expr.CmpGtOrEq expr 
 	operator:  expr.CmpLs expr 
 	operator:  expr.CmpLsOrEq expr 
-	args:  expr.    (43)
+	args:  expr.    (44)
 	args:  expr.Comma args 
 
 	Pipe  shift 17
@@ -1110,7 +1111,7 @@ state 58
 	NumSub  shift 21
 	NumMul  shift 23
 	NumDiv  shift 22
-	.  reduce 43 (src line 116)
+	.  reduce 44 (src line 117)
 
 
 state 59
@@ -1428,9 +1429,9 @@ state 77
 	sub_selector  goto 85
 
 state 78
-	args:  expr Comma args.    (44)
+	args:  expr Comma args.    (45)
 
-	.  reduce 44 (src line 117)
+	.  reduce 45 (src line 118)
 
 
 state 79
@@ -1549,7 +1550,7 @@ state 90
 
 
 30 terminals, 9 nonterminals
-45 grammar rules, 91/8000 states
+46 grammar rules, 91/8000 states
 0 shift/reduce, 0 reduce/reduce conflicts reported
 58 working sets used
 memory: parser 139/120000

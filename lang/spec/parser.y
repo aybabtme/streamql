@@ -112,6 +112,7 @@ operator:      LogNot    expr               { $$ = emitOpNot($2)        }
         ;
 
 func_call: Identifier LeftParens args RightParens { $$ = emitFuncCall($1, $3) }
+         | Identifier                             { $$ = emitImplicitFuncCall($1) }
          ;
 args: expr                                        { $$ = emitArg($1) }
     | expr Comma args                             { $$ = emitArgs($1, $3) }

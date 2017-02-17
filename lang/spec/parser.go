@@ -87,7 +87,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyInitialStackSize = 16
 
-//line parser.y:120
+//line parser.y:121
 
 func cast(y yyLexer) *AST { return y.(*Lexer).parseResult.(*AST) }
 
@@ -143,7 +143,7 @@ var yyExca = [...]int{
 	-2, 40,
 }
 
-const yyNprod = 45
+const yyNprod = 46
 const yyPrivate = 57344
 
 var yyTokenNames []string
@@ -215,7 +215,7 @@ var yyR1 = [...]int{
 	3, 3, 3, 4, 4, 4, 4, 4, 4, 4,
 	7, 7, 7, 7, 7, 7, 7, 5, 5, 5,
 	5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-	5, 5, 6, 8, 8,
+	5, 5, 6, 6, 8, 8,
 }
 var yyR2 = [...]int{
 
@@ -223,7 +223,7 @@ var yyR2 = [...]int{
 	1, 1, 1, 1, 3, 4, 5, 7, 6, 6,
 	3, 3, 4, 6, 5, 5, 0, 2, 3, 3,
 	2, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 4, 1, 3,
+	3, 3, 4, 1, 1, 3,
 }
 var yyChk = [...]int{
 
@@ -241,13 +241,13 @@ var yyChk = [...]int{
 var yyDef = [...]int{
 
 	2, -2, 1, 3, 4, 5, 6, 8, 9, 10,
-	11, 12, 13, 0, 0, 0, 0, 0, 0, 0,
+	11, 12, 13, 0, 0, 0, 43, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	26, 0, 27, 30, 5, 0, 0, 7, 28, 29,
 	31, 32, 33, 34, -2, -2, -2, -2, -2, -2,
-	14, 0, 0, 26, 0, 0, 41, 0, 43, 26,
+	14, 0, 0, 26, 0, 0, 41, 0, 44, 26,
 	26, 0, 0, 15, 26, 0, 0, 42, 0, 20,
-	21, 26, 0, 0, 16, 0, 26, 26, 44, 22,
+	21, 26, 0, 0, 16, 0, 26, 26, 45, 22,
 	0, 26, 26, 26, 19, 18, 26, 25, 24, 17,
 	23,
 }
@@ -850,13 +850,19 @@ yydefault:
 		}
 	case 43:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line parser.y:116
+		//line parser.y:115
+		{
+			yyVAL = emitImplicitFuncCall(yyDollar[1])
+		}
+	case 44:
+		yyDollar = yyS[yypt-1 : yypt+1]
+		//line parser.y:117
 		{
 			yyVAL = emitArg(yyDollar[1])
 		}
-	case 44:
+	case 45:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line parser.y:117
+		//line parser.y:118
 		{
 			yyVAL = emitArgs(yyDollar[1], yyDollar[3])
 		}

@@ -297,6 +297,18 @@ func emitFuncCall(arg0, arg1 yySymType) yySymType {
 	return yySymType{node: &FuncCall{Name: name, Args: args}}
 }
 
+func emitImplicitFuncCall(arg0 yySymType) yySymType {
+	var (
+		name string
+	)
+	if arg0.curID != Identifier {
+		panic(fmt.Sprintf("invalid function name: %v", arg0.curID))
+	} else {
+		name = arg0.cur.lit
+	}
+	return yySymType{node: &FuncCall{Name: name}}
+}
+
 func emitArg(arg0 yySymType) yySymType {
 	var expr = expr(arg0)
 	return yySymType{node: expr}

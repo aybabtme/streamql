@@ -16,33 +16,28 @@ func TestVM(t *testing.T) {
 		name   string
 		strict bool
 		input  []msg.Msg
-		query  string
+		query  []string
 		want   []msg.Msg
 	}{
 		{"passthru of nothing", true,
 			list(),
-			"",
+			[]string{""},
 			list(),
 		},
 		{"passthru of nothing", true,
 			list(),
-			".",
+			[]string{"."},
 			list(),
 		},
 		{"passthru", true,
 			list(mustBool(bd, true)),
-			"",
+			[]string{""},
 			list(mustBool(bd, true)),
 		},
 		{"passthru", true,
 			list(mustBool(bd, true)),
-			".",
+			[]string{"."},
 			list(mustBool(bd, true)),
-		},
-		{"passthru if true", true,
-			list(mustBool(bd, true), mustBool(bd, false), mustBool(bd, true), mustBool(bd, false)),
-			"select(.)",
-			list(mustBool(bd, true), mustBool(bd, true)),
 		},
 		{"explode", true,
 			list(
@@ -57,7 +52,7 @@ func TestVM(t *testing.T) {
 					mustInt(bd, 6),
 				),
 			),
-			".[]",
+			[]string{".[]"},
 			list(
 				mustInt(bd, 1),
 				mustInt(bd, 2),
@@ -80,7 +75,7 @@ func TestVM(t *testing.T) {
 					mustInt(bd, 6),
 				),
 			),
-			".[]",
+			[]string{".[]"},
 			list(
 				mustInt(bd, 1),
 				mustInt(bd, 2),
@@ -117,7 +112,7 @@ func TestVM(t *testing.T) {
 					),
 				),
 			),
-			".[][]",
+			[]string{".[][]"},
 			list(
 				mustInt(bd, 1),
 				mustInt(bd, 2),
@@ -146,7 +141,7 @@ func TestVM(t *testing.T) {
 					mustInt(bd, 6),
 				),
 			),
-			".[1:]",
+			[]string{".[1:]"},
 			list(
 				mustInt(bd, 2),
 				mustInt(bd, 3),
@@ -167,7 +162,7 @@ func TestVM(t *testing.T) {
 					mustInt(bd, 6),
 				),
 			),
-			".[:2]",
+			[]string{".[:2]"},
 			list(
 				mustInt(bd, 1),
 				mustInt(bd, 2),
@@ -188,7 +183,7 @@ func TestVM(t *testing.T) {
 					mustInt(bd, 6),
 				),
 			),
-			".[1:2]",
+			[]string{".[1:2]"},
 			list(
 				mustInt(bd, 2),
 				mustInt(bd, 5),
@@ -200,7 +195,7 @@ func TestVM(t *testing.T) {
 					"hello": mustString(bd, "world"),
 				}),
 			),
-			".hello",
+			[]string{".hello"},
 			list(
 				mustString(bd, "world"),
 			),
@@ -217,7 +212,7 @@ func TestVM(t *testing.T) {
 					"hello": mustObject(bd, map[string]msg.Msg{}),
 				}),
 			),
-			".hello.world",
+			[]string{".hello.world"},
 			list(
 				mustFloat(bd, 3.14159),
 			),
@@ -235,7 +230,7 @@ func TestVM(t *testing.T) {
 					}),
 				}),
 			),
-			".hello.world | select(. > 4.0)",
+			[]string{".hello.world | select(. > 4.0)"},
 			list(
 				mustFloat(bd, 2*3.14159),
 			),
@@ -255,7 +250,7 @@ func TestVM(t *testing.T) {
 					"name": mustString(bd, "item2"),
 				}),
 			),
-			"select(.keep) | .name",
+			[]string{"select(.keep) | .name"},
 			list(
 				mustString(bd, "item0"),
 				mustString(bd, "item2"),
@@ -282,7 +277,7 @@ func TestVM(t *testing.T) {
 					"name": mustString(bd, "item2"),
 				}),
 			),
-			"select(.cond.keep) | .name",
+			[]string{"select(.cond.keep) | .name"},
 			list(
 				mustString(bd, "item0"),
 				mustString(bd, "item2"),
@@ -347,7 +342,7 @@ func TestVM(t *testing.T) {
 				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, true), "r": mustInt(bd, 2)}),
 				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 2), "r": mustString(bd, "")}),
 			),
-			".l == .r",
+			[]string{".l == .r"},
 			list(
 				mustBool(bd, true),
 				mustBool(bd, false),
@@ -434,7 +429,7 @@ func TestVM(t *testing.T) {
 				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, true), "r": mustInt(bd, 2)}),
 				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 2), "r": mustString(bd, "")}),
 			),
-			".l != .r",
+			[]string{".l != .r"},
 			list(
 				mustBool(bd, false),
 				mustBool(bd, true),
@@ -481,7 +476,7 @@ func TestVM(t *testing.T) {
 				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello"), "r": mustString(bd, "hello")}),
 				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello"), "r": mustString(bd, "bye")}),
 			),
-			".l > .r",
+			[]string{".l > .r"},
 			list(
 				mustBool(bd, false),
 				mustBool(bd, true),
@@ -516,7 +511,7 @@ func TestVM(t *testing.T) {
 				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello"), "r": mustString(bd, "hello")}),
 				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello"), "r": mustString(bd, "bye")}),
 			),
-			".l >= .r",
+			[]string{".l >= .r"},
 			list(
 				mustBool(bd, true),
 				mustBool(bd, true),
@@ -557,7 +552,7 @@ func TestVM(t *testing.T) {
 				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello"), "r": mustString(bd, "bye")}),
 				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "bye"), "r": mustString(bd, "hello")}),
 			),
-			".l < .r",
+			[]string{".l < .r"},
 			list(
 				mustBool(bd, false),
 				mustBool(bd, false),
@@ -598,7 +593,7 @@ func TestVM(t *testing.T) {
 				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello"), "r": mustString(bd, "hello")}),
 				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello"), "r": mustString(bd, "bye")}),
 			),
-			".l <= .r",
+			[]string{".l <= .r"},
 			list(
 				mustBool(bd, true),
 				mustBool(bd, false),
@@ -619,7 +614,7 @@ func TestVM(t *testing.T) {
 				mustBool(bd, false),
 				mustBool(bd, true),
 			),
-			"!.",
+			[]string{"!."},
 			list(
 				mustBool(bd, true),
 				mustBool(bd, false),
@@ -632,7 +627,7 @@ func TestVM(t *testing.T) {
 				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, true), "r": mustBool(bd, false)}),
 				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, true), "r": mustBool(bd, true)}),
 			),
-			".l && .r",
+			[]string{".l && .r"},
 			list(
 				mustBool(bd, false),
 				mustBool(bd, false),
@@ -647,7 +642,7 @@ func TestVM(t *testing.T) {
 				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, true), "r": mustBool(bd, false)}),
 				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, true), "r": mustBool(bd, true)}),
 			),
-			".l || .r",
+			[]string{".l || .r"},
 			list(
 				mustBool(bd, false),
 				mustBool(bd, true),
@@ -662,7 +657,7 @@ func TestVM(t *testing.T) {
 				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, true), "r": mustBool(bd, false)}),
 				mustObject(bd, map[string]msg.Msg{"l": mustBool(bd, true), "r": mustBool(bd, true)}),
 			),
-			".l != .r",
+			[]string{".l != .r"},
 			list(
 				mustBool(bd, false),
 				mustBool(bd, true),
@@ -688,7 +683,7 @@ func TestVM(t *testing.T) {
 				mustObject(bd, map[string]msg.Msg{"l": mustString(bd, "hello "), "r": mustFloat(bd, 2.2)}),
 				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1.1), "r": mustString(bd, "world")}),
 			),
-			".l + .r",
+			[]string{".l + .r"},
 			list(
 				mustFloat(bd, 3),
 				mustInt(bd, 3),
@@ -713,7 +708,7 @@ func TestVM(t *testing.T) {
 				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustInt(bd, 2)}),
 				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustFloat(bd, 2)}),
 			),
-			".l - .r",
+			[]string{".l - .r"},
 			list(
 				mustFloat(bd, -1),
 				mustInt(bd, -1),
@@ -725,7 +720,7 @@ func TestVM(t *testing.T) {
 			list(
 				mustBool(bd, true),
 			),
-			"-1",
+			[]string{"-1"},
 			list(
 				mustInt(bd, -1),
 			),
@@ -734,7 +729,7 @@ func TestVM(t *testing.T) {
 			list(
 				mustBool(bd, true),
 			),
-			"-1.2",
+			[]string{"-1.2"},
 			list(
 				mustFloat(bd, -1.2),
 			),
@@ -747,7 +742,7 @@ func TestVM(t *testing.T) {
 				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustInt(bd, 2)}),
 				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustFloat(bd, 2)}),
 			),
-			".l / .r",
+			[]string{".l / .r"},
 			list(
 				mustFloat(bd, 1.0/2.0),
 				mustInt(bd, 1/2),
@@ -762,7 +757,7 @@ func TestVM(t *testing.T) {
 				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 1), "r": mustInt(bd, 0)}),
 				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 1), "r": mustFloat(bd, 0)}),
 			),
-			".l / .r",
+			[]string{".l / .r"},
 			list(),
 		},
 		{"multiplication", true,
@@ -773,7 +768,7 @@ func TestVM(t *testing.T) {
 				mustObject(bd, map[string]msg.Msg{"l": mustFloat(bd, 3.5), "r": mustInt(bd, 2)}),
 				mustObject(bd, map[string]msg.Msg{"l": mustInt(bd, 3), "r": mustFloat(bd, 2.5)}),
 			),
-			".l * .r",
+			[]string{".l * .r"},
 			list(
 				mustFloat(bd, 7),
 				mustInt(bd, 6),
@@ -784,57 +779,57 @@ func TestVM(t *testing.T) {
 
 		{"priority of operations", true,
 			list(mustBool(bd, true)),
-			"4-1",
+			[]string{"4-1"},
 			list(mustInt(bd, 3)),
 		},
 		{"priority of operations", true,
 			list(mustBool(bd, true)),
-			"4.0-(1+4)",
+			[]string{"4.0-(1+4)"},
 			list(mustFloat(bd, -1)),
 		},
 		{"priority of operations", true,
 			list(mustBool(bd, true)),
-			"4-1+4",
+			[]string{"4-1+4"},
 			list(mustInt(bd, 7)),
 		},
 		{"priority of operations", true,
 			list(mustBool(bd, true)),
-			"4-(1+4)",
+			[]string{"4-(1+4)"},
 			list(mustInt(bd, -1)),
 		},
 		{"priority of operations", true,
 			list(mustBool(bd, true)),
-			"4.0-(1+4)",
+			[]string{"4.0-(1+4)"},
 			list(mustFloat(bd, -1)),
 		},
 		{"priority of operations", true,
 			list(mustBool(bd, true)),
-			"4-1+4",
+			[]string{"4-1+4"},
 			list(mustInt(bd, 7)),
 		},
 		{"priority of operations", true,
 			list(mustBool(bd, true)),
-			"4.0-1+4",
+			[]string{"4.0-1+4"},
 			list(mustFloat(bd, 7)),
 		},
 		{"priority of operations", true,
 			list(mustBool(bd, true)),
-			"4/(1*4)",
+			[]string{"4/(1*4)"},
 			list(mustInt(bd, 1)),
 		},
 		{"priority of operations", true,
 			list(mustBool(bd, true)),
-			"4.0/(1.0*4.0)",
+			[]string{"4.0/(1.0*4.0)"},
 			list(mustFloat(bd, 1.0)),
 		},
 		{"priority of operations", true,
 			list(mustBool(bd, true)),
-			"4/1*4",
+			[]string{"4/1*4"},
 			list(mustInt(bd, 16)),
 		},
 		{"priority of operations", true,
 			list(mustBool(bd, true)),
-			"4.0/1.0*4.0",
+			[]string{"4.0/1.0*4.0"},
 			list(mustFloat(bd, 16.0)),
 		},
 
@@ -844,30 +839,150 @@ func TestVM(t *testing.T) {
 		// 	"select(.too, .many, .arg)",
 		// 	list(mustFloat(bd, 16.0)),
 		// },
+
+		{"passthru if true", true,
+			list(mustBool(bd, true), mustBool(bd, false), mustBool(bd, true), mustBool(bd, false)),
+			[]string{
+				`select(., .)`,
+				`select(.)`,
+				`. | select(.)`,
+				`select(select(.))`,
+				`select(., select(.))`,
+				`select(., select(., .))`,
+				`select(.) | select(.) | select(.)`,
+			},
+			list(mustBool(bd, true), mustBool(bd, true)),
+		},
+
+		{"regexp", true,
+			list(
+				mustObject(bd, map[string]msg.Msg{
+					"s":       mustString(bd, "aaaaa"),
+					"pattern": mustString(bd, "a"),
+				}),
+			),
+			[]string{"select(regexp(.s, .pattern))"},
+			list(
+				mustObject(bd, map[string]msg.Msg{
+					"s":       mustString(bd, "aaaaa"),
+					"pattern": mustString(bd, "a"),
+				}),
+			),
+		},
+
+		{"contains", true,
+			list(
+				mustObject(bd, map[string]msg.Msg{
+					"s":         mustString(bd, "aaaaa"),
+					"substring": mustString(bd, "a"),
+				}),
+			),
+			[]string{"select(contains(.s, .substring))"},
+			list(
+				mustObject(bd, map[string]msg.Msg{
+					"s":         mustString(bd, "aaaaa"),
+					"substring": mustString(bd, "a"),
+				}),
+			),
+		},
+
+		{"length", true,
+			list(
+				mustString(bd, "hello world"),
+				mustArray(bd,
+					mustInt(bd, 1),
+					mustInt(bd, 2),
+					mustInt(bd, 3),
+				),
+				mustObject(bd, map[string]msg.Msg{
+					"1": mustInt(bd, 1),
+					"2": mustInt(bd, 2),
+				}),
+			),
+			[]string{
+				"length(.)",
+				"length",
+				". | length",
+			},
+			list(
+				mustInt(bd, 11),
+				mustInt(bd, 3),
+				mustInt(bd, 2),
+			),
+		},
+
+		{"keys", true,
+			list(
+				mustArray(bd,
+					mustString(bd, "lol"),
+					mustString(bd, "lol"),
+					mustString(bd, "lol"),
+				),
+				mustObject(bd, map[string]msg.Msg{
+					"key1": mustInt(bd, 1),
+					"key2": mustInt(bd, 2),
+				}),
+			),
+			[]string{
+				"keys(.)",
+				"keys",
+				". | keys",
+			},
+			list(
+				mustArray(bd,
+					mustInt(bd, 0),
+					mustInt(bd, 1),
+					mustInt(bd, 2),
+				),
+				mustArray(bd,
+					mustString(bd, "key1"),
+					mustString(bd, "key2"),
+				),
+			),
+		},
+
+		{"has", true,
+			list(
+				mustObject(bd, map[string]msg.Msg{
+					"s": mustString(bd, "aaaaa"),
+				}),
+			),
+			[]string{
+				`has(., "s")`,
+				`has("s")`,
+				`. | has("s")`,
+			},
+			list(
+				mustBool(bd, true),
+			),
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ast, err := Parse(strings.NewReader(tt.query))
-			if err != nil {
-				t.Fatal(err)
-			}
-			vm := &ASTInterpreter{tree: ast, Strict: tt.strict}
-
-			var got []msg.Msg
-			err = vm.Run(bd, ArraySource(tt.input), func(m msg.Msg) error {
-				if m == nil {
-					panic("derpo")
+			for _, query := range tt.query {
+				t.Logf("query=\t%s", query)
+				ast, err := Parse(strings.NewReader(query))
+				if err != nil {
+					t.Fatal(err)
 				}
-				got = append(got, m)
-				return nil
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if want, got := tt.want, got; !reflect.DeepEqual(want, got) {
-				t.Errorf("want=%#v", want)
-				t.Errorf(" got=%#v", got)
+				vm := &ASTInterpreter{tree: ast, Strict: tt.strict}
+
+				var got []msg.Msg
+				err = vm.Run(bd, ArraySource(tt.input), func(m msg.Msg) error {
+					if m == nil {
+						panic("derpo")
+					}
+					got = append(got, m)
+					return nil
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if want, got := tt.want, got; !reflect.DeepEqual(want, got) {
+					t.Errorf("want=%#v", want)
+					t.Errorf(" got=%#v", got)
+				}
 			}
 		})
 	}
