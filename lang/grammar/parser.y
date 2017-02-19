@@ -3,7 +3,7 @@ package spec
 
 import (
     "io"
-    // "log"
+    "github.com/aybabtme/streamql/lang/ast"
 )
 
 var implicitSliceIdx = struct{}{}
@@ -120,11 +120,11 @@ args: expr                                        { $$ = emitArg($1) }
 
 %%
 
-func cast(y yyLexer) *AST { return y.(*Lexer).parseResult.(*AST) }
+func cast(y yyLexer) *ast.AST { return y.(*Lexer).parseResult.(*ast.AST) }
 
-func Parse(r io.Reader) (ast *AST, err error) {
-    ast = new(AST)
-    lex := NewLexerWithInit(r, func(l *Lexer) { l.parseResult = ast })
+func Parse(r io.Reader) (tree *ast.AST, err error) {
+    tree = new(ast.AST)
+    lex := NewLexerWithInit(r, func(l *Lexer) { l.parseResult = tree })
     // defer func() {
     //     r := recover()
     //     if r != nil {
@@ -132,5 +132,5 @@ func Parse(r io.Reader) (ast *AST, err error) {
     //     }
     // }()
     yyParse(lex)
-    return ast, err
+    return tree, err
 }

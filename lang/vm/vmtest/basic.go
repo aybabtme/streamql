@@ -1,15 +1,18 @@
-package spec
+package vmtest
 
 import (
 	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/aybabtme/streamql/lang/spec/msg"
-	"github.com/aybabtme/streamql/lang/spec/msg/gomsg"
+	"github.com/aybabtme/streamql/lang/ast"
+	"github.com/aybabtme/streamql/lang/grammar"
+	"github.com/aybabtme/streamql/lang/msg"
+	"github.com/aybabtme/streamql/lang/msg/gomsg"
+	"github.com/aybabtme/streamql/lang/vm"
 )
 
-func TestVM(t *testing.T) {
+func Verify(t *testing.T, mkVM func(*ast.AST, *vm.Options) vm.VM) {
 	bd := gomsg.Build()
 
 	tests := []struct {
@@ -962,11 +965,13 @@ func TestVM(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			for _, query := range tt.query {
 				t.Logf("query=\t%s", query)
-				ast, err := Parse(strings.NewReader(query))
+				tree, err := grammar.Parse(strings.NewReader(query))
 				if err != nil {
 					t.Fatal(err)
 				}
-				vm := &ASTInterpreter{tree: ast, Strict: tt.strict}
+				vm := mkVM(tree, &vm.Options{
+					Strict: tt.strict,
+				})
 
 				var got []msg.Msg
 				err = vm.Run(bd, ArraySource(tt.input), func(m msg.Msg) error {

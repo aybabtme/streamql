@@ -1,12 +1,12 @@
 //line parser.y:2
-package spec
+package grammar
 
 import __yyfmt__ "fmt"
 
 //line parser.y:2
 import (
+	"github.com/aybabtme/streamql/lang/ast"
 	"io"
-	// "log"
 )
 
 var implicitSliceIdx = struct{}{}
@@ -88,12 +88,11 @@ const yyErrCode = 2
 const yyInitialStackSize = 16
 
 //line parser.y:121
+func cast(y yyLexer) *ast.AST { return y.(*Lexer).parseResult.(*ast.AST) }
 
-func cast(y yyLexer) *AST { return y.(*Lexer).parseResult.(*AST) }
-
-func Parse(r io.Reader) (ast *AST, err error) {
-	ast = new(AST)
-	lex := NewLexerWithInit(r, func(l *Lexer) { l.parseResult = ast })
+func Parse(r io.Reader) (tree *ast.AST, err error) {
+	tree = new(ast.AST)
+	lex := NewLexerWithInit(r, func(l *Lexer) { l.parseResult = tree })
 	// defer func() {
 	//     r := recover()
 	//     if r != nil {
@@ -101,7 +100,7 @@ func Parse(r io.Reader) (ast *AST, err error) {
 	//     }
 	// }()
 	yyParse(lex)
-	return ast, err
+	return tree, err
 }
 
 //line yacctab:1

@@ -1,6 +1,6 @@
 package gomsg
 
-import "github.com/aybabtme/streamql/lang/spec/msg"
+import "github.com/aybabtme/streamql/lang/msg"
 
 var _ msg.Msg = (internalMsg)(nil)
 
@@ -41,7 +41,7 @@ type concreteObj struct {
 
 func (concreteObj) isGoMsg()                            {}
 func (co *concreteObj) Type() msg.Type                  { return msg.TypeObject }
-func (co *concreteObj) IsNull() bool                    { return co.members == nil }
+func (co *concreteObj) IsNull() bool                    { return false }
 func (co *concreteObj) Keys() []string                  { return co.keys }
 func (co *concreteObj) Member(k string) (msg.Msg, bool) { v, ok := co.members[k]; return v, ok }
 
@@ -64,7 +64,7 @@ type concreteArr struct {
 
 func (concreteArr) isGoMsg()                  {}
 func (ca *concreteArr) Type() msg.Type        { return msg.TypeArray }
-func (ca concreteArr) IsNull() bool           { return ca.elems == nil }
+func (ca concreteArr) IsNull() bool           { return false }
 func (ca *concreteArr) Len() int64            { return int64(len(ca.elems)) }
 func (ca *concreteArr) Index(i int64) msg.Msg { return ca.elems[i] }
 func (ca *concreteArr) Slice(from, to int64) msg.Source {

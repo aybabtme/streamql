@@ -1,4 +1,4 @@
-package spec
+package grammar
 
 import (
 	"fmt"

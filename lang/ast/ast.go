@@ -1,190 +1,115 @@
 package ast
 
-type FiltersStmt struct {
-	Filters []*FilterStmt `json:"filters"`
+type AST struct {
+	Expr *Expr `json:"expr,omitempty"`
 }
 
-type FilterStmt struct {
-	Funcs []*FuncStmt `json:"funcs"`
-}
-
-type FuncStmt struct {
+type Expr struct {
 	// oneof
-	EmitFunc *EmitFuncStmt `json:"emit_func,omitempty"`
-	Selector *SelectorStmt `json:"selector,omitempty"`
+	Literal  *Literal  `json:"literal,omitempty"`
+	Selector *Selector `json:"selector,omitempty"`
+	Operator *Operator `json:"operator,omitempty"`
+	FuncCall *FuncCall `json:"func_call,omitempty"`
+	Next     *Expr     `json:"next,omitempty"`
 }
 
-type EmitFuncStmt struct {
+type Literal struct {
 	// oneof
-	EmitBooleanFunc *EmitBooleanFunc `json:"emit_boolean_func,omitempty"`
-	EmitStringFunc  *EmitStringFunc  `json:"emit_string_func,omitempty"`
-	EmitNumberFunc  *EmitNumberFunc  `json:"emit_number_func,omitempty"`
-	EmitAnyFunc     *EmitAnyFunc     `json:"emit_any_func,omitempty"`
+	Bool   *bool     `json:"bool,omitempty"`
+	String *string   `json:"string,omitempty"`
+	Int    *int64    `json:"int64,omitempty"`
+	Float  *float64  `json:"float64,omitempty"`
+	Null   *struct{} `json:"null,omitempty"`
 }
 
-type SelectorStmt struct {
+type Selector struct {
 	// oneof
-	Object *ObjectSelectorStmt `json:"object,omitempty"`
-	Array  *ArraySelectorStmt  `json:"array,omitempty"`
+	Noop   *NoopSelector   `json:"noop,omitempty"`
+	Member *MemberSelector `json:"member,omitempty"`
+	Slice  *SliceSelector  `json:"slice,omitempty"`
 }
 
-type ObjectSelectorStmt struct {
-	// Member on which the Child will be applied.
-	Member string        `json:"member,omitempty"`
-	Child  *SelectorStmt `json:"child,omitempty"`
+type NoopSelector struct{}
+type MemberSelector struct {
+	Index *Expr     `json:"index,omitempty"`
+	Child *Selector `json:"child,omitempty"`
+}
+type SliceSelector struct {
+	From  *Expr     `json:"from,omitempty"`
+	To    *Expr     `json:"to,omitempty"`
+	Child *Selector `json:"child,omitempty"`
 }
 
-type ArraySelectorStmt struct {
+type FuncCall struct {
+	Name string  `json:"name,omitempty"`
+	Args []*Expr `json:"args,omitempty"`
+}
+
+type Operator struct {
 	// oneof
-	Each      *EachSelectorStmt      `json:"each,omitempty"`
-	RangeEach *RangeEachSelectorStmt `json:"range_each,omitempty"`
-	Index     *IndexSelectorStmt     `json:"index,omitempty"`
-
-	// Member on which the Child will be applied.
-	Child *SelectorStmt `json:"child,omitempty"`
+	LogNot    *OperandLogNot    `json:"not,omitempty"`
+	LogAnd    *OperandLogAnd    `json:"and,omitempty"`
+	LogOr     *OperandLogOr     `json:"or,omitempty"`
+	NumAdd    *OperandNumAdd    `json:"add,omitempty"`
+	NumSub    *OperandNumSub    `json:"sub,omitempty"`
+	NumDiv    *OperandNumDiv    `json:"div,omitempty"`
+	NumMul    *OperandNumMul    `json:"mul,omitempty"`
+	CmpEq     *OperandCmpEq     `json:"eq,omitempty"`
+	CmpNotEq  *OperandCmpNotEq  `json:"not_eq,omitempty"`
+	CmpGt     *OperandCmpGt     `json:"gt,omitempty"`
+	CmpGtOrEq *OperandCmpGtOrEq `json:"gte,omitempty"`
+	CmpLs     *OperandCmpLs     `json:"ls,omitempty"`
+	CmpLsOrEq *OperandCmpLsOrEq `json:"lse,omitempty"`
 }
 
-type (
-	EachSelectorStmt      struct{}
-	RangeEachSelectorStmt struct {
-		From *IntegerArg `json:"from,omitempty"`
-		To   *IntegerArg `json:"to,omitempty"`
-	}
-	IndexSelectorStmt struct {
-		Index *IntegerArg `json:"index,omitempty"`
-	}
-)
-
-type EmitBooleanFunc struct {
-	// oneof
-	Literal        *BooleanArg         `json:"literal,omitempty"`
-	StringContains *FuncStringContains `json:"string_contains,omitempty"`
-	StringRegexp   *FuncStringRegexp   `json:"string_regexp,omitempty"`
-	Algebra        *AlgebraBooleanOps  `json:"algebra,omitempty"`
+type OperandLogNot struct {
+	Arg *Expr `json:"arg,omitempty"`
 }
-type EmitStringFunc struct {
-	// oneof
-	Literal      *StringArg        `json:"literal,omitempty"`
-	StringSubStr *FuncStringSubStr `json:"string_substr,omitempty"`
+type OperandLogAnd struct {
+	LHS *Expr `json:"lhs,omitempty"`
+	RHS *Expr `json:"rhs,omitempty"`
 }
-type EmitNumberFunc struct {
-	// oneof
-	Int     *EmitIntFunc      `json:"int,omitempty"`
-	Float   *EmitFloatFunc    `json:"float,omitempty"`
-	Algebra *AlgebraNumberOps `json:"algebra,omitempty"`
+type OperandLogOr struct {
+	LHS *Expr `json:"lhs,omitempty"`
+	RHS *Expr `json:"rhs,omitempty"`
 }
-type EmitAnyFunc struct {
-	// oneof
-	AnySelect *FuncAnySelect `json:"select,omitempty"`
+type OperandNumAdd struct {
+	LHS *Expr `json:"lhs,omitempty"`
+	RHS *Expr `json:"rhs,omitempty"`
 }
-
-type EmitIntFunc struct {
-	// oneof
-	Literal      *IntegerArg       `json:"literal,omitempty"`
-	StringLength *FuncStringLength `json:"string_length,omitempty"`
+type OperandNumSub struct {
+	LHS *Expr `json:"lhs,omitempty"`
+	RHS *Expr `json:"rhs,omitempty"`
 }
-type EmitFloatFunc struct {
-	// oneof
-	Literal    *NumberArg      `json:"literal,omitempty"`
-	StringAtof *FuncStringAtof `json:"string_atof,omitempty"`
+type OperandNumDiv struct {
+	LHS *Expr `json:"lhs,omitempty"`
+	RHS *Expr `json:"rhs,omitempty"`
 }
-
-type AlgebraBooleanOps struct {
-	// oneof
-	Or  *FuncBooleanOr  `json:"or,omitempty"`
-	And *FuncBooleanAnd `json:"and,omitempty"`
-	Not *FuncBooleanNot `json:"not,omitempty"`
-	XOR *FuncBooleanXOR `json:"xor,omitempty"`
+type OperandNumMul struct {
+	LHS *Expr `json:"lhs,omitempty"`
+	RHS *Expr `json:"rhs,omitempty"`
 }
-
-type AlgebraNumberOps struct {
-	// oneof
-	Add      *FuncNumberAdd      `json:"add,omitempty"`
-	Subtract *FuncNumberSubtract `json:"subtract,omitempty"`
-	Multiply *FuncNumberMultiply `json:"multiply,omitempty"`
-	Divide   *FuncNumberDivide   `json:"divide,omitempty"`
+type OperandCmpEq struct {
+	LHS *Expr `json:"lhs,omitempty"`
+	RHS *Expr `json:"rhs,omitempty"`
 }
-
-type StringArg struct {
-	// oneof
-	String         *string         `json:"string,omitempty"`
-	EmitStringFunc *EmitStringFunc `json:"emit_string_func,omitempty"`
-	Selector       *SelectorStmt   `json:"selector,omitempty"`
+type OperandCmpNotEq struct {
+	LHS *Expr `json:"lhs,omitempty"`
+	RHS *Expr `json:"rhs,omitempty"`
 }
-
-type BooleanArg struct {
-	// oneof
-	Boolean         *bool            `json:"boolean,omitempty"`
-	EmitBooleanFunc *EmitBooleanFunc `json:"emit_boolean_func,omitempty"`
-	Selector        *SelectorStmt    `json:"selector,omitempty"`
+type OperandCmpGt struct {
+	LHS *Expr `json:"lhs,omitempty"`
+	RHS *Expr `json:"rhs,omitempty"`
 }
-
-type NumberArg struct {
-	// oneof
-	Number         *float64        `json:"number,omitempty"`
-	EmitNumberFunc *EmitNumberFunc `json:"emit_number_func,omitempty"`
-	Selector       *SelectorStmt   `json:"selector,omitempty"`
+type OperandCmpGtOrEq struct {
+	LHS *Expr `json:"lhs,omitempty"`
+	RHS *Expr `json:"rhs,omitempty"`
 }
-
-type IntegerArg struct {
-	// oneof
-	Integer     *int64        `json:"integer,omitempty"`
-	EmitIntFunc *EmitIntFunc  `json:"emit_int_func,omitempty"`
-	Selector    *SelectorStmt `json:"selector,omitempty"`
+type OperandCmpLs struct {
+	LHS *Expr `json:"lhs,omitempty"`
+	RHS *Expr `json:"rhs,omitempty"`
 }
-
-type FuncStringContains struct {
-	SubString *StringArg `json:"substring"`
-	Target    *StringArg `json:"target"`
-}
-type FuncStringRegexp struct {
-	Expression *StringArg `json:"expression"`
-	Target     *StringArg `json:"target"`
-}
-type FuncStringSubStr struct {
-	String *StringArg  `json:"string"`
-	From   *IntegerArg `json:"from"`
-	To     *IntegerArg `json:"to"`
-}
-type FuncStringLength struct {
-	String *StringArg `json:"string"`
-}
-type FuncStringAtof struct {
-	String *StringArg `json:"string"`
-}
-type FuncAnySelect struct {
-	Condition *BooleanArg `json:"condition"`
-}
-
-type FuncBooleanOr struct {
-	LHS *BooleanArg `json:"lhs"`
-	RHS *BooleanArg `json:"rhs"`
-}
-type FuncBooleanAnd struct {
-	LHS *BooleanArg `json:"lhs"`
-	RHS *BooleanArg `json:"rhs"`
-}
-type FuncBooleanNot struct {
-	Boolean *BooleanArg `json:"boolean"`
-}
-type FuncBooleanXOR struct {
-	LHS *BooleanArg `json:"lhs"`
-	RHS *BooleanArg `json:"rhs"`
-}
-
-type FuncNumberAdd struct {
-	LHS *NumberArg `json:"lhs"`
-	RHS *NumberArg `json:"rhs"`
-}
-type FuncNumberSubtract struct {
-	LHS *NumberArg `json:"lhs"`
-	RHS *NumberArg `json:"rhs"`
-}
-type FuncNumberMultiply struct {
-	LHS *NumberArg `json:"lhs"`
-	RHS *NumberArg `json:"rhs"`
-}
-type FuncNumberDivide struct {
-	LHS *NumberArg `json:"lhs"`
-	RHS *NumberArg `json:"rhs"`
+type OperandCmpLsOrEq struct {
+	LHS *Expr `json:"lhs,omitempty"`
+	RHS *Expr `json:"rhs,omitempty"`
 }

@@ -1,4 +1,4 @@
-package spec
+package grammar
 
 import (
 	"encoding/json"
@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/aybabtme/streamql/lang/ast"
 )
 
 func TestParse(t *testing.T) {
@@ -14,38 +16,54 @@ func TestParse(t *testing.T) {
 	yyErrorVerbose = true
 
 	var (
-		ast       = func(expr *Expr) *AST { return &AST{Expr: expr} }
-		pipe      = func(lhs, rhs *Expr) *Expr { lhs.Next = rhs; return lhs }
-		exprSel   = func(s *Selector) *Expr { return &Expr{Selector: s} }
-		exprLit   = func(s *Literal) *Expr { return &Expr{Literal: s} }
-		exprOp    = func(s *Operator) *Expr { return &Expr{Operator: s} }
-		exprFn    = func(s *FuncCall) *Expr { return &Expr{FuncCall: s} }
-		selNoop   = func() *Selector { return &Selector{Noop: &NoopSelector{}} }
-		selMember = func(expr *Expr, child *Selector) *Selector {
-			return &Selector{Member: &MemberSelector{Index: expr, Child: child}}
+		mkAST     = func(expr *ast.Expr) *ast.AST { return &ast.AST{Expr: expr} }
+		pipe      = func(lhs, rhs *ast.Expr) *ast.Expr { lhs.Next = rhs; return lhs }
+		exprSel   = func(s *ast.Selector) *ast.Expr { return &ast.Expr{Selector: s} }
+		exprLit   = func(s *ast.Literal) *ast.Expr { return &ast.Expr{Literal: s} }
+		exprOp    = func(s *ast.Operator) *ast.Expr { return &ast.Expr{Operator: s} }
+		exprFn    = func(s *ast.FuncCall) *ast.Expr { return &ast.Expr{FuncCall: s} }
+		selNoop   = func() *ast.Selector { return &ast.Selector{Noop: &ast.NoopSelector{}} }
+		selMember = func(expr *ast.Expr, child *ast.Selector) *ast.Selector {
+			return &ast.Selector{Member: &ast.MemberSelector{Index: expr, Child: child}}
 		}
-		selSlice = func(from, to *Expr, child *Selector) *Selector {
-			return &Selector{Slice: &SliceSelector{From: from, To: to, Child: child}}
+		selSlice = func(from, to *ast.Expr, child *ast.Selector) *ast.Selector {
+			return &ast.Selector{Slice: &ast.SliceSelector{From: from, To: to, Child: child}}
 		}
-		opNot = func(lhs *Expr) *Operator { return &Operator{LogNot: &OperandLogNot{Arg: lhs}} }
-		opAnd = func(lhs, rhs *Expr) *Operator { return &Operator{LogAnd: &OperandLogAnd{LHS: lhs, RHS: rhs}} }
-		opOr  = func(lhs, rhs *Expr) *Operator { return &Operator{LogOr: &OperandLogOr{LHS: lhs, RHS: rhs}} }
-		opAdd = func(lhs, rhs *Expr) *Operator { return &Operator{NumAdd: &OperandNumAdd{LHS: lhs, RHS: rhs}} }
-		opSub = func(lhs, rhs *Expr) *Operator { return &Operator{NumSub: &OperandNumSub{LHS: lhs, RHS: rhs}} }
-		opMul = func(lhs, rhs *Expr) *Operator { return &Operator{NumMul: &OperandNumMul{LHS: lhs, RHS: rhs}} }
-		opDiv = func(lhs, rhs *Expr) *Operator { return &Operator{NumDiv: &OperandNumDiv{LHS: lhs, RHS: rhs}} }
-		opEq  = func(lhs, rhs *Expr) *Operator { return &Operator{CmpEq: &OperandCmpEq{LHS: lhs, RHS: rhs}} }
-		opGt  = func(lhs, rhs *Expr) *Operator { return &Operator{CmpGt: &OperandCmpGt{LHS: lhs, RHS: rhs}} }
+		opNot = func(lhs *ast.Expr) *ast.Operator { return &ast.Operator{LogNot: &ast.OperandLogNot{Arg: lhs}} }
+		opAnd = func(lhs, rhs *ast.Expr) *ast.Operator {
+			return &ast.Operator{LogAnd: &ast.OperandLogAnd{LHS: lhs, RHS: rhs}}
+		}
+		opOr = func(lhs, rhs *ast.Expr) *ast.Operator {
+			return &ast.Operator{LogOr: &ast.OperandLogOr{LHS: lhs, RHS: rhs}}
+		}
+		opAdd = func(lhs, rhs *ast.Expr) *ast.Operator {
+			return &ast.Operator{NumAdd: &ast.OperandNumAdd{LHS: lhs, RHS: rhs}}
+		}
+		opSub = func(lhs, rhs *ast.Expr) *ast.Operator {
+			return &ast.Operator{NumSub: &ast.OperandNumSub{LHS: lhs, RHS: rhs}}
+		}
+		opMul = func(lhs, rhs *ast.Expr) *ast.Operator {
+			return &ast.Operator{NumMul: &ast.OperandNumMul{LHS: lhs, RHS: rhs}}
+		}
+		opDiv = func(lhs, rhs *ast.Expr) *ast.Operator {
+			return &ast.Operator{NumDiv: &ast.OperandNumDiv{LHS: lhs, RHS: rhs}}
+		}
+		opEq = func(lhs, rhs *ast.Expr) *ast.Operator {
+			return &ast.Operator{CmpEq: &ast.OperandCmpEq{LHS: lhs, RHS: rhs}}
+		}
+		opGt = func(lhs, rhs *ast.Expr) *ast.Operator {
+			return &ast.Operator{CmpGt: &ast.OperandCmpGt{LHS: lhs, RHS: rhs}}
+		}
 
-		fn = func(name string, args ...*Expr) *FuncCall { return &FuncCall{Name: name, Args: args} }
+		fn = func(name string, args ...*ast.Expr) *ast.FuncCall { return &ast.FuncCall{Name: name, Args: args} }
 
-		litBool   = func(v bool) *Literal { return &Literal{Bool: &v} }
-		litString = func(v string) *Literal { return &Literal{String: &v} }
-		litInt    = func(v int64) *Literal { return &Literal{Int: &v} }
-		litFloat  = func(v float64) *Literal { return &Literal{Float: &v} }
-		litNull   = func() *Literal { return &Literal{Null: &struct{}{}} }
+		litBool   = func(v bool) *ast.Literal { return &ast.Literal{Bool: &v} }
+		litString = func(v string) *ast.Literal { return &ast.Literal{String: &v} }
+		litInt    = func(v int64) *ast.Literal { return &ast.Literal{Int: &v} }
+		litFloat  = func(v float64) *ast.Literal { return &ast.Literal{Float: &v} }
+		litNull   = func() *ast.Literal { return &ast.Literal{Null: &struct{}{}} }
 
-		_ = ast
+		_ = mkAST
 		_ = pipe
 		_ = exprSel
 		_ = exprLit
@@ -74,14 +92,14 @@ func TestParse(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    string
-		want    *AST
+		want    *ast.AST
 		wantErr bool
 	}{
 
-		{args: "", want: ast(nil)},
-		{args: ".", want: ast(exprSel(selNoop()))},
-		{args: ". | .", want: ast(pipe(exprSel(selNoop()), exprSel(selNoop())))},
-		{args: ". | . | .", want: ast(
+		{args: "", want: mkAST(nil)},
+		{args: ".", want: mkAST(exprSel(selNoop()))},
+		{args: ". | .", want: mkAST(pipe(exprSel(selNoop()), exprSel(selNoop())))},
+		{args: ". | . | .", want: mkAST(
 			pipe(
 				exprSel(selNoop()),
 				pipe(
@@ -90,7 +108,7 @@ func TestParse(t *testing.T) {
 				),
 			),
 		)},
-		{args: ". | . | . | .", want: ast(
+		{args: ". | . | . | .", want: mkAST(
 			pipe(
 				exprSel(selNoop()),
 				pipe(
@@ -102,31 +120,31 @@ func TestParse(t *testing.T) {
 				),
 			),
 		)},
-		{args: "true", want: ast(exprLit(litBool(true)))},
-		{args: `""`, want: ast(exprLit(litString("")))},
-		{args: `1`, want: ast(exprLit(litInt(1)))},
-		{args: `1.0`, want: ast(exprLit(litFloat(1)))},
-		{args: `null`, want: ast(exprLit(litNull()))},
-		{args: ".hello", want: ast(exprSel(
+		{args: "true", want: mkAST(exprLit(litBool(true)))},
+		{args: `""`, want: mkAST(exprLit(litString("")))},
+		{args: `1`, want: mkAST(exprLit(litInt(1)))},
+		{args: `1.0`, want: mkAST(exprLit(litFloat(1)))},
+		{args: `null`, want: mkAST(exprLit(litNull()))},
+		{args: ".hello", want: mkAST(exprSel(
 			selMember(exprLit(litString("hello")), nil),
 		))},
-		{args: ".hello.bye", want: ast(exprSel(
+		{args: ".hello.bye", want: mkAST(exprSel(
 			selMember(exprLit(litString("hello")),
 				selMember(exprLit(litString("bye")), nil),
 			),
 		))},
-		{args: ".[]", want: ast(
+		{args: ".[]", want: mkAST(
 			exprSel(
 				selSlice(nil, nil, nil),
 			),
 		)},
-		{args: ".[1]", want: ast(
+		{args: ".[1]", want: mkAST(
 			exprSel(
 				selMember(exprLit(litInt(1)), nil),
 			),
 		)},
 
-		{args: ".[1:2]", want: ast(
+		{args: ".[1:2]", want: mkAST(
 			exprSel(
 				selSlice(
 					exprLit(litInt(1)),
@@ -135,7 +153,7 @@ func TestParse(t *testing.T) {
 				),
 			),
 		)},
-		{args: ".hello[]", want: ast(
+		{args: ".hello[]", want: mkAST(
 			exprSel(
 				selMember(
 					exprLit(litString("hello")),
@@ -143,7 +161,7 @@ func TestParse(t *testing.T) {
 				),
 			),
 		)},
-		{args: ".hello[1]", want: ast(
+		{args: ".hello[1]", want: mkAST(
 			exprSel(
 				selMember(
 					exprLit(litString("hello")),
@@ -151,7 +169,7 @@ func TestParse(t *testing.T) {
 				),
 			),
 		)},
-		{args: ".hello[1:2]", want: ast(
+		{args: ".hello[1:2]", want: mkAST(
 			exprSel(
 				selMember(
 					exprLit(litString("hello")),
@@ -163,14 +181,14 @@ func TestParse(t *testing.T) {
 				),
 			),
 		)},
-		{args: ".[][]", want: ast(
+		{args: ".[][]", want: mkAST(
 			exprSel(
 				selSlice(nil, nil,
 					selSlice(nil, nil, nil),
 				),
 			),
 		)},
-		{args: ".[1][1]", want: ast(
+		{args: ".[1][1]", want: mkAST(
 			exprSel(
 				selMember(
 					exprLit(litInt(1)),
@@ -178,7 +196,7 @@ func TestParse(t *testing.T) {
 				),
 			),
 		)},
-		{args: ".[1:2][1:2]", want: ast(
+		{args: ".[1:2][1:2]", want: mkAST(
 			exprSel(
 				selSlice(
 					exprLit(litInt(1)),
@@ -192,7 +210,7 @@ func TestParse(t *testing.T) {
 			),
 		)},
 
-		{args: ".hello[].bye", want: ast(
+		{args: ".hello[].bye", want: mkAST(
 			exprSel(
 				selMember(
 					exprLit(litString("hello")),
@@ -202,7 +220,7 @@ func TestParse(t *testing.T) {
 				),
 			),
 		)},
-		{args: ".hello[1].bye", want: ast(
+		{args: ".hello[1].bye", want: mkAST(
 			exprSel(
 				selMember(
 					exprLit(litString("hello")),
@@ -212,7 +230,7 @@ func TestParse(t *testing.T) {
 				),
 			),
 		)},
-		{args: ".hello[1:2].bye", want: ast(
+		{args: ".hello[1:2].bye", want: mkAST(
 			exprSel(
 				selMember(
 					exprLit(litString("hello")),
@@ -225,22 +243,22 @@ func TestParse(t *testing.T) {
 			),
 		)},
 
-		{args: `!.`, want: ast(
+		{args: `!.`, want: mkAST(
 			exprOp(opNot(exprSel(selNoop()))),
 		)},
-		{args: `. && .`, want: ast(
+		{args: `. && .`, want: mkAST(
 			exprOp(opAnd(
 				exprSel(selNoop()),
 				exprSel(selNoop()),
 			)),
 		)},
-		{args: `. || .`, want: ast(
+		{args: `. || .`, want: mkAST(
 			exprOp(opOr(
 				exprSel(selNoop()),
 				exprSel(selNoop()),
 			)),
 		)},
-		{args: `. && . && .`, want: ast(
+		{args: `. && . && .`, want: mkAST(
 			exprOp(opAnd(
 				exprOp(opAnd(
 					exprSel(selNoop()),
@@ -249,7 +267,7 @@ func TestParse(t *testing.T) {
 				exprSel(selNoop()),
 			)),
 		)},
-		{args: `. || . || .`, want: ast(
+		{args: `. || . || .`, want: mkAST(
 			exprOp(opOr(
 				exprOp(opOr(
 					exprSel(selNoop()),
@@ -258,7 +276,7 @@ func TestParse(t *testing.T) {
 				exprSel(selNoop()),
 			)),
 		)},
-		{args: `!. || !. || !.`, want: ast(
+		{args: `!. || !. || !.`, want: mkAST(
 			exprOp(opOr(
 				exprOp(opOr(
 					exprOp(opNot(exprSel(selNoop()))),
@@ -267,7 +285,7 @@ func TestParse(t *testing.T) {
 				exprOp(opNot(exprSel(selNoop()))),
 			)),
 		)},
-		{args: `!(. || .) || !.`, want: ast(
+		{args: `!(. || .) || !.`, want: mkAST(
 			exprOp(opOr(
 				exprOp(opNot(
 					exprOp(opOr(
@@ -278,7 +296,7 @@ func TestParse(t *testing.T) {
 				exprOp(opNot(exprSel(selNoop()))),
 			)),
 		)},
-		{args: `!. || !(. || .)`, want: ast(
+		{args: `!. || !(. || .)`, want: mkAST(
 			exprOp(opOr(
 				exprOp(opNot(exprSel(selNoop()))),
 				exprOp(opNot(
@@ -290,31 +308,31 @@ func TestParse(t *testing.T) {
 			)),
 		)},
 
-		{args: `. + .`, want: ast(
+		{args: `. + .`, want: mkAST(
 			exprOp(opAdd(
 				exprSel(selNoop()),
 				exprSel(selNoop()),
 			)),
 		)},
-		{args: `. - .`, want: ast(
+		{args: `. - .`, want: mkAST(
 			exprOp(opSub(
 				exprSel(selNoop()),
 				exprSel(selNoop()),
 			)),
 		)},
-		{args: `. / .`, want: ast(
+		{args: `. / .`, want: mkAST(
 			exprOp(opDiv(
 				exprSel(selNoop()),
 				exprSel(selNoop()),
 			)),
 		)},
-		{args: `. * .`, want: ast(
+		{args: `. * .`, want: mkAST(
 			exprOp(opMul(
 				exprSel(selNoop()),
 				exprSel(selNoop()),
 			)),
 		)},
-		{args: `. + . + .`, want: ast(
+		{args: `. + . + .`, want: mkAST(
 			exprOp(opAdd(
 				exprOp(opAdd(
 					exprSel(selNoop()),
@@ -323,7 +341,7 @@ func TestParse(t *testing.T) {
 				exprSel(selNoop()),
 			)),
 		)},
-		{args: `. - . - .`, want: ast(
+		{args: `. - . - .`, want: mkAST(
 			exprOp(opSub(
 				exprOp(opSub(
 					exprSel(selNoop()),
@@ -332,7 +350,7 @@ func TestParse(t *testing.T) {
 				exprSel(selNoop()),
 			)),
 		)},
-		{args: `. / . / .`, want: ast(
+		{args: `. / . / .`, want: mkAST(
 			exprOp(opDiv(
 				exprOp(opDiv(
 					exprSel(selNoop()),
@@ -341,7 +359,7 @@ func TestParse(t *testing.T) {
 				exprSel(selNoop()),
 			)),
 		)},
-		{args: `. * . * .`, want: ast(
+		{args: `. * . * .`, want: mkAST(
 			exprOp(opMul(
 				exprOp(opMul(
 					exprSel(selNoop()),
@@ -351,7 +369,7 @@ func TestParse(t *testing.T) {
 			)),
 		)},
 
-		{args: `1 + 2 - 3`, want: ast(
+		{args: `1 + 2 - 3`, want: mkAST(
 			exprOp(opAdd(
 				exprLit(litInt(1)),
 				exprOp(opSub(
@@ -360,7 +378,7 @@ func TestParse(t *testing.T) {
 				)),
 			)),
 		)},
-		{args: `1 - 2 + 3`, want: ast(
+		{args: `1 - 2 + 3`, want: mkAST(
 			exprOp(opAdd(
 				exprOp(opSub(
 					exprLit(litInt(1)),
@@ -369,7 +387,7 @@ func TestParse(t *testing.T) {
 				exprLit(litInt(3)),
 			)),
 		)},
-		{args: `1 * 2 / 3`, want: ast(
+		{args: `1 * 2 / 3`, want: mkAST(
 			exprOp(opMul(
 				exprLit(litInt(1)),
 				exprOp(opDiv(
@@ -378,7 +396,7 @@ func TestParse(t *testing.T) {
 				)),
 			)),
 		)},
-		{args: `1 / 2 * 3`, want: ast(
+		{args: `1 / 2 * 3`, want: mkAST(
 			exprOp(opMul(
 				exprOp(opDiv(
 					exprLit(litInt(1)),
@@ -388,7 +406,7 @@ func TestParse(t *testing.T) {
 			)),
 		)},
 
-		{args: `1 - (2 + 3)`, want: ast(
+		{args: `1 - (2 + 3)`, want: mkAST(
 			exprOp(opSub(
 				exprLit(litInt(1)),
 				exprOp(opAdd(
@@ -397,7 +415,7 @@ func TestParse(t *testing.T) {
 				)),
 			)),
 		)},
-		{args: `1 / (2 * 3)`, want: ast(
+		{args: `1 / (2 * 3)`, want: mkAST(
 			exprOp(opDiv(
 				exprLit(litInt(1)),
 				exprOp(opMul(
@@ -407,10 +425,10 @@ func TestParse(t *testing.T) {
 			)),
 		)},
 
-		{args: "select(true)", want: ast(
+		{args: "select(true)", want: mkAST(
 			exprFn(fn("select", exprLit(litBool(true)))),
 		)},
-		{args: "select(true && true)", want: ast(
+		{args: "select(true && true)", want: mkAST(
 			exprFn(fn("select",
 				exprOp(opAnd(
 					exprLit(litBool(true)),
@@ -418,15 +436,15 @@ func TestParse(t *testing.T) {
 				)),
 			)),
 		)},
-		{args: "select(.)", want: ast(
+		{args: "select(.)", want: mkAST(
 			exprFn(fn("select", exprSel(selNoop()))),
 		)},
-		{args: "select(.lol)", want: ast(
+		{args: "select(.lol)", want: mkAST(
 			exprFn(fn("select", exprSel(
 				selMember(exprLit(litString("lol")), nil),
 			))),
 		)},
-		{args: "select(bool(.lol) && true)", want: ast(
+		{args: "select(bool(.lol) && true)", want: mkAST(
 			exprFn(fn("select", exprOp(
 				opAnd(
 					exprFn(fn("bool", exprSel(
@@ -436,7 +454,7 @@ func TestParse(t *testing.T) {
 				),
 			))),
 		)},
-		{args: "select(.lol && true)", want: ast(
+		{args: "select(.lol && true)", want: mkAST(
 			exprFn(fn("select", exprOp(
 				opAnd(
 					exprSel(selMember(exprLit(litString("lol")), nil)),
@@ -445,7 +463,7 @@ func TestParse(t *testing.T) {
 			))),
 		)},
 
-		{args: `1+1>2 && 2+2 == 4 || 1+1>2 && !(2+2 == 4)`, want: ast(
+		{args: `1+1>2 && 2+2 == 4 || 1+1>2 && !(2+2 == 4)`, want: mkAST(
 			exprOp(opOr(
 				// 1+1>2 && 2+2 == 4
 				exprOp(opAnd(
@@ -486,7 +504,7 @@ func TestParse(t *testing.T) {
 			)),
 		)},
 
-		{args: `.lol[0:1] | select(.is_red && string(.size) == "large")`, want: ast(
+		{args: `.lol[0:1] | select(.is_red && string(.size) == "large")`, want: mkAST(
 			pipe(
 				exprSel(selMember(
 					exprLit(litString("lol")),
@@ -511,7 +529,7 @@ func TestParse(t *testing.T) {
 				)),
 			),
 		)},
-		{args: `.lol[0:1] | select(.is_red && string(.size) == "large") | select(.)`, want: ast(
+		{args: `.lol[0:1] | select(.is_red && string(.size) == "large") | select(.)`, want: mkAST(
 			pipe(
 				exprSel(selMember(
 					exprLit(litString("lol")),
@@ -544,12 +562,12 @@ func TestParse(t *testing.T) {
 			),
 		)},
 
-		{args: "select(.)", want: ast(
+		{args: "select(.)", want: mkAST(
 			exprFn(fn("select", exprSel(
 				selNoop(),
 			))),
 		)},
-		{args: "select(.size > 1)", want: ast(
+		{args: "select(.size > 1)", want: mkAST(
 			exprFn(fn("select", exprOp(
 				opGt(
 					exprSel(selMember(exprLit(litString("size")), nil)),
@@ -557,7 +575,7 @@ func TestParse(t *testing.T) {
 				),
 			))),
 		)},
-		{args: "select(.size > 1) / 1000", want: ast(
+		{args: "select(.size > 1) / 1000", want: mkAST(
 			exprOp(opDiv(
 				exprFn(fn("select", exprOp(
 					opGt(
@@ -568,7 +586,7 @@ func TestParse(t *testing.T) {
 				exprLit(litInt(1000)),
 			)),
 		)},
-		{args: "reduce(select(.size > 1) / 1000)", want: ast(
+		{args: "reduce(select(.size > 1) / 1000)", want: mkAST(
 			exprFn(fn(
 				"reduce",
 				exprOp(opDiv(
@@ -582,7 +600,7 @@ func TestParse(t *testing.T) {
 				)),
 			)),
 		)},
-		{args: "reduce(select(.size > 1) | . / 1000)", want: ast(
+		{args: "reduce(select(.size > 1) | . / 1000)", want: mkAST(
 			exprFn(fn(
 				"reduce",
 				pipe(
@@ -599,7 +617,7 @@ func TestParse(t *testing.T) {
 				),
 			)),
 		)},
-		{args: "select(.cond.keep) | .name", want: ast(
+		{args: "select(.cond.keep) | .name", want: mkAST(
 			pipe(
 				exprFn(fn(
 					"select",

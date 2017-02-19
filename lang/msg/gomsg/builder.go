@@ -1,6 +1,6 @@
 package gomsg
 
-import "github.com/aybabtme/streamql/lang/spec/msg"
+import "github.com/aybabtme/streamql/lang/msg"
 
 // Build returns a msg.Builder that can create msg.Msg of the
 // gomsg kind.

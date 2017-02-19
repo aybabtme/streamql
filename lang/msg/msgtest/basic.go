@@ -1,12 +1,12 @@
-package gomsg
+package msgtest
 
 import (
 	"testing"
 
 	"reflect"
 
-	"github.com/aybabtme/streamql/lang/spec/msg"
-	"github.com/aybabtme/streamql/lang/spec/msg/msgutil"
+	"github.com/aybabtme/streamql/lang/msg"
+	"github.com/aybabtme/streamql/lang/msg/msgutil"
 )
 
 type emitter func(msg.Builder) (msg.Msg, error)
@@ -53,7 +53,7 @@ var (
 	}
 )
 
-func TestBuilder(t *testing.T) {
+func VerifyBuilder(t *testing.T, mkBuild func() msg.Builder) {
 	tests := []struct {
 		name  string
 		want  interface{}
@@ -212,7 +212,7 @@ func TestBuilder(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			bd := Build()
+			bd := mkBuild()
 			v, err := tt.toMsg(bd)
 			if err != nil {
 				t.Fatal(err)

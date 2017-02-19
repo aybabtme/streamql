@@ -3,8 +3,80 @@ package msgutil
 import (
 	"fmt"
 
-	"github.com/aybabtme/streamql/lang/spec/msg"
+	"github.com/aybabtme/streamql/lang/msg"
 )
+
+// FromGo turns a `v` into a msg.Msg, if `v` is a basic type or a
+// slice/map of the same.
+func FromGo(dst msg.Builder, v interface{}) (msg.Msg, error) {
+	switch vt := v.(type) {
+	case int:
+		return dst.Int(int64(vt))
+	case int8:
+		return dst.Int(int64(vt))
+	case int16:
+		return dst.Int(int64(vt))
+	case int32:
+		return dst.Int(int64(vt))
+	case int64:
+		return dst.Int(vt)
+	case uint:
+		return dst.Int(int64(vt))
+	case uint8:
+		return dst.Int(int64(vt))
+	case uint16:
+		return dst.Int(int64(vt))
+	case uint32:
+		return dst.Int(int64(vt))
+	case uint64:
+		return dst.Int(int64(vt))
+
+	case float32:
+		return dst.Float(float64(vt))
+	case float64:
+		return dst.Float(vt)
+
+	case bool:
+		return dst.Bool(vt)
+
+	case string:
+		return dst.String(vt)
+
+	case []interface{}:
+		return fromSlice(dst, vt)
+
+	case map[string]interface{}:
+		return fromMap(dst, vt)
+	}
+
+	return nil, fmt.Errorf("unsupported type for conversion from Go to Msg: %T", v)
+}
+
+func fromSlice(dst msg.Builder, elems []interface{}) (msg.Msg, error) {
+	return dst.Array(func(ab msg.ArrayBuilder) error {
+		for _, v := range elems {
+			if err := ab.AddElem(func(b msg.Builder) (msg.Msg, error) {
+				return FromGo(b, v)
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func fromMap(dst msg.Builder, kv map[string]interface{}) (msg.Msg, error) {
+	return dst.Object(func(ob msg.ObjectBuilder) error {
+		for k, v := range kv {
+			if err := ob.AddMember(k, func(b msg.Builder) (msg.Msg, error) {
+				return FromGo(b, v)
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
 
 // Convert takes a Msg and converts it to the type produced
 // by the given Builder. If the Msg is already of a type
