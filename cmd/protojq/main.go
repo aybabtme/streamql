@@ -10,9 +10,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/aybabtme/streamql/lang/parser"
+	"github.com/aybabtme/streamql/lang/grammar"
+	"github.com/aybabtme/streamql/lang/msg"
+	"github.com/aybabtme/streamql/lang/msg/gomsg"
+	"github.com/aybabtme/streamql/lang/msg/msgutil"
 	"github.com/aybabtme/streamql/lang/vm"
-	"github.com/aybabtme/streamql/lang/vm/msg"
+	"github.com/aybabtme/streamql/lang/vm/astvm"
 )
 
 func main() {
@@ -22,24 +25,15 @@ func main() {
 	flag.Parse()
 	query := strings.Join(flag.Args(), " ")
 
-	tree, err := parser.NewParser(strings.NewReader(query)).Parse()
+	tree, err := grammar.Parse(strings.NewReader(query))
 	if err != nil {
 		log.Fatalf("invalid query: %v", err)
-	}
-	if len(tree.Filters) > 1 {
-		log.Fatalf("can only accept 1 filter")
 	}
 
 	in := os.Stdin
 	out := os.Stdout
-	if len(tree.Filters) < 0 {
-		_, err := io.Copy(in, out)
-		if err != nil {
-			log.Fatal(err)
-		}
-		return
-	}
 
+	builder := gomsg.Build()
 	dec := json.NewDecoder(in)
 	enc := json.NewEncoder(out)
 
@@ -47,7 +41,7 @@ func main() {
 	wg.Add(2)
 	defer wg.Wait()
 
-	inc := make(chan msg.Message, runtime.NumCPU())
+	inc := make(chan msg.Msg, runtime.NumCPU())
 	go func() {
 		defer wg.Done()
 		for {
@@ -57,27 +51,36 @@ func main() {
 				close(inc)
 				return
 			case nil:
-				inc <- msg.Naive(v)
+				msgv, err := msgutil.FromGo(builder, v)
+				if err != nil {
+					panic(err)
+				}
+				inc <- msgv
 			default:
 				log.Fatalf("invalid input: %v", err)
 			}
 		}
 	}()
 
-	outc := make(chan msg.Message, runtime.NumCPU())
+	outc := make(chan msg.Msg, runtime.NumCPU())
 	go func() {
 		defer wg.Done()
 		for m := range outc {
-			if err := enc.Encode(m.(*msg.NaiveMessage).Orig()); err != nil {
+			v, err := msgutil.Reveal(m)
+			if err != nil {
+				panic(err)
+			}
+			if err := enc.Encode(v); err != nil {
 				log.Fatalf("invalid output: %v", err)
 			}
 		}
 	}()
 
-	engine := vm.ASTInterpreter(tree.Filters[0])
-	engine.Filter(
-		func() (msg.Message, bool) { msg, more := <-inc; return msg, more },
-		func(m msg.Message) bool { outc <- m; return true },
+	engine := astvm.Interpreter(tree, &vm.Options{})
+	engine.Run(
+		builder,
+		func() (msg.Msg, bool, error) { msg, more := <-inc; return msg, more, nil },
+		func(m msg.Msg) error { outc <- m; return nil },
 	)
 	close(outc)
 }

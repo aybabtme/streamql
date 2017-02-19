@@ -6,61 +6,288 @@
 
 Start -> Filters .
 Filters -> Filter
-         | Filter FilterSeparatorKeyword Filters .
+         | Filter FilterSepKw Filters .
 
-Filter -> Selector
-        | Selector PipeSeparatorKeyword Filter .
-RootSelector -> ObjectSelector Selector .
-Selector -> ObjectSelector Selector
-          | ArraySelector Selector
-          | epsilon.
-ObjectSelector -> ThisKeyword
-                | ThisKeyword Member .
-ArraySelector -> EachKeyword
-               | RangeEachKeyword
-               | IndexKeyword .
+Filter -> Func
+        | Func PipeSepKw Func .
+
+Func -> Sel
+      | EmitFunc .
+EmitFunc -> EmitBoolFunc
+          | EmitStrFunc
+          | EmitNumFunc
+          | EmitAnyFunc .
+Sel    -> ObjectSel SubSel .
+SubSel -> ObjectSel SubSel
+        | ArraySel SubSel
+        | epsilon.
+ObjectSel -> ThisKw
+           | ThisKw Member .
+ArraySel -> EachKw
+          | RangeEachKw
+          | IndexKw .
+
+EmitBoolFunc  -> FuncStrContains
+               | FuncStrRegexp
+               | AlgBoolOps .
+EmitStrFunc   -> FuncStrSubstr .
+EmitAnyFunc   -> FuncAnySelect .
+EmitNumFunc   -> EmitIntFunc
+               | EmitFloatFunc
+               | AlgNumOps .
+EmitIntFunc   -> FuncStrLength .
+EmitFloatFunc -> epsilon .
+
+AlgBoolOps -> FuncBoolOr
+            | FuncBoolAnd
+            | FuncBoolNot
+            | FuncBoolXOR .
+
+AlgNumOps -> FuncNumAdd
+           | FuncNumSubtract
+           | FuncNumMultiply
+           | FuncNumDivide .
 
 Member -> FieldIdentifier .
-EachKeyword -> OpenArrayKeyword CloseArrayKeyword .
-RangeEachKeyword -> OpenArrayKeyword Range CloseArrayKeyword .
-IndexKeyword -> OpenArrayKeyword Index CloseArrayKeyword .
-Range -> Integer RangeSeparatorKeyword Integer .
-Index -> Integer .
+EachKw -> OpenArrayKw CloseArrayKw .
+RangeEachKw -> OpenArrayKw Range CloseArrayKw .
+IndexKw -> OpenArrayKw Index CloseArrayKw .
+Range -> IntArg RangeSepKw IntArg .
+Index -> IntArg .
+
+FuncStrContains -> ContainsKw OpenFuncKw StrArg ArgSepKw Sel CloseFuncKw .
+FuncStrRegexp   -> RegexpKw OpenFuncKw StrArg ArgSepKw Sel CloseFuncKw .
+FuncStrSubstr   -> SubStrKw OpenFuncKw StrArg ArgSepKw IntArg ArgSepKw IntArg CloseFuncKw .
+FuncStrLength   -> LengthKw OpenFuncKw StrArg CloseFuncKw .
+
+FuncAnySelect      -> SelectKw OpenFuncKw BoolArg CloseFuncKw .
+
+FuncBoolOr  -> BoolArg OrKw BoolArg .
+FuncBoolAnd -> BoolArg AndKw BoolArg .
+FuncBoolNot -> NotKw BoolArg .
+FuncBoolXOR -> BoolArg XORKw BoolArg .
+
+FuncNumAdd      -> NumArg AddKw NumArg .
+FuncNumSubtract -> NumArg SubtractKw NumArg .
+FuncNumMultiply -> NumArg MultiplyKw NumArg .
+FuncNumDivide   -> NumArg DivideKw NumArg .
+
+StrArg -> Str
+        | EmitStrFunc
+        | Sel .
+BoolArg -> Bool
+         | EmitBoolFunc
+         | Sel .
+NumArg -> Num
+        | EmitNumFunc
+        | Sel .
+IntArg -> Int
+        | EmitIntFunc
+        | Sel .
+
+ContainsKw  -> contains_class .
+RegexpKw    -> regexp_class .
+SelectKw    -> select_class .
+LengthKw    -> length_class .
+SubStrKw    -> substring_class .
+OpenFuncKw  -> left_parens_class .
+CloseFuncKw -> right_parens_class .
+ArgSepKw    -> comma_class .
+OrKw        -> or_class .
+AndKw       -> and_class .
+NotKw       -> not_class .
+XORKw       -> xor_class .
+AddKw       -> add_class .
+SubtractKw  -> substract_class .
+MultiplyKw  -> multiply_class .
+DivideKw    -> divide_class .
+OpenStrKw   -> quote_class .
+CloseStrKw  -> quote_class .
+
+
+Str    -> OpenStrKw SubStr CloseStrKw .
+SubStr -> Letter SubStr
+        | escape_letter_class CloseStrKw
+        | epsilon .
+
+Bool -> bool_class .
+
+Num             -> Int SubNum .
+SubNum          -> SubDecimalPart SubExponentPart
+SubDecimalPart  -> DecimalKw Int
+                 | epsilon .
+SubExponentPart -> sci_notation_class Int
+                 | epsilon .
+
 
 /* LL(1) (better implementable) */
 
-Start                 -> Filters .
-Filters               -> Filter Whitespace FilterChain .
-FilterChain           -> comma Whitespace Filters
-                       | epsilon .
-Filter                -> Selectors .
-Selectors             -> RootSelector Whitespace SelectorChain .
-SelectorChain         -> pipe Whitespace Selectors
-                       | epsilon .
-RootSelector          -> dot RootObjectSelector .
-RootObjectSelector    -> MemberSelector Selector
-                       | ArraySelector Selector
-                       | Whitespace epsilon .
-Selector              -> ObjectSelector Selector
-                       | ArraySelector Selector
-                       | Whitespace epsilon .
-ObjectSelector        -> dot MemberSelector .
-MemberSelector        -> string .
-ArraySelector         -> leftBracket ArrayOpSelector .
-ArrayOpSelector       -> rightBracket
-                       | Whitespace integer Whitespace ArrayOpIndexor .
-ArrayOpIndexor        -> colon Whitespace integer Whitespace rightBracket
-                       | rightBracket .
+Start         -> Filters .
+Filters       -> Filter Whitespace FilterChain .
+FilterChain   -> FilterSepKw Whitespace Filters
+               | epsilon .
+Filter        -> Funcs .
+Funcs         -> Func Whitespace FuncChain .
+FuncChain     -> PipeSepKw Whitespace Funcs
+               | epsilon .
+Func          -> Sel
+               | EmitFunc .
+EmitFunc      -> EmitBoolFunc
+               | EmitStrFunc
+               | EmitNumFunc
+               | EmitAnyFunc .
+Sel           -> ThisKw RootObjSel .
+RootObjSel    -> MemberSel SubSel
+               | ArraySel SubSel
+               | Whitespace epsilon .
+SubSel        -> ObjSel SubSel
+               | ArraySel SubSel
+               | Whitespace epsilon .
+ObjSel        -> ThisKw MemberSel .
+MemberSel     -> InlineStr .
+ArraySel      -> OpenArrayKw ArrayOpSel .
+ArrayOpSel    -> CloseArrayKw
+               | Whitespace IntArg Whitespace ArrayOpIdx .
+ArrayOpIdx    -> RangeSepKw Whitespace IntArg Whitespace CloseArrayKw
+               | CloseArrayKw .
+EmitStrFunc   -> BuiltInStrFunc .
+EmitAnyFunc   -> BuiltInAnyFunc .
+EmitNumFunc   -> AlgNumOps .
+EmitBoolFunc  -> AlgBoolOps .
+
+BuiltInStrFunc   -> FuncStrSubStr .
+BuiltInAnyFunc   -> FuncAnySelect .
+BuiltInIntFunc   -> FuncStrLength .
+BuiltInFloatFunc -> FuncStrAtof .
+
+BuiltInBoolFunc -> FuncStrContains
+                 | FuncStrRegexp .
+
+AlgBoolOps       -> BoolArg AlgBoolOpsTwoAry
+                  | AlgBoolOpsUnary .
+AlgBoolOpsUnary  -> FuncBoolNot .
+AlgBoolOpsTwoAry -> FuncBoolOr
+                  | FuncBoolAnd
+                  | FuncBoolXOR
+                  | epsilon .
+
+AlgNumOps       -> NumArg AlgNumOpsTwoAry
+                 | OpenPriorityKw AlgNumOps ClosePriorityKw .
+AlgNumOpsTwoAry -> FuncNumAdd
+                 | FuncNumSubtract
+                 | FuncNumMultiply
+                 | FuncNumDivide
+                 | epsilon .
+
+FuncStrContains -> ContainsKw OpenFuncKw StrArg ArgSepKw Sel CloseFuncKw .
+FuncStrRegexp   -> RegexpKw OpenFuncKw StrArg ArgSepKw Sel CloseFuncKw .
+FuncStrSubStr   -> SubStrKw OpenFuncKw StrArg ArgSepKw IntArg ArgSepKw IntArg CloseFuncKw .
+FuncStrLength   -> LengthKw OpenFuncKw StrArg CloseFuncKw .
+FuncAnySelect   -> SelectKw OpenFuncKw BoolArg CloseFuncKw .
+FuncStrAtof     -> AtofKw OpenFuncKw StrArg CloseFuncKw .
+
+FuncBoolOr      -> OrKw BoolArg .
+FuncBoolAnd     -> AndKw BoolArg .
+FuncBoolXOR     -> XORKw BoolArg .
+FuncBoolNot     -> NotKw BoolArg .
+
+FuncNumAdd      -> AddKw NumArg .
+FuncNumSubtract -> SubtractKw NumArg .
+FuncNumMultiply -> MultiplyKw NumArg .
+FuncNumDivide   -> DivideKw NumArg .
 
 Whitespace -> whitespace Whitespace
             | epsilon .
+
+StrArg  -> Str
+         | BuiltInStrFunc .
+BoolArg -> Bool
+         | BuiltInBoolFunc .
+NumArg  -> Num
+         | BuiltInIntFunc
+         | BuiltInFloatFunc .
+IntArg  -> Int
+         | BuiltInIntFunc .
+
+Str    -> OpenStrKw SubStr CloseStrKw .
+SubStr -> Letter SubStr
+        | Digit SubStr
+        | escape_letter CloseStrKw
+        | epsilon .
+Letter -> letter_class .
+Digit  -> digit_class .
+
+Bool -> bool .
+
+Num             -> Int SubNum .
+SubNum          -> SubDecimalPart SubExponentPart .
+SubDecimalPart  -> DecimalKw Int
+                 | epsilon .
+SubExponentPart -> sci_notation Int
+                 | epsilon .
+Int             -> SubInt
+                 | InvKw SubInt .
+SubInt          -> zero_digit_class
+                 | non_zero_digit_class SubInt .
+
+
+InlineStr       -> InlineLetter SubInlineStr .
+SubInlineStr    -> InlineLetter SubInlineStr
+                 | Digit SubInlineStr
+                 | epsilon .
+InlineLetter    -> Letter
+                 | escape_letter_class InlineEscapedKw .
+InlineEscapedKw -> FilterSepKw
+                 | PipeSepKw
+                 | ThisKw
+                 | OpenArrayKw
+                 | CloseArrayKw
+                 | RangeSepKw
+                 | OpenFuncKw
+                 | CloseFuncKw
+                 | OpenStrKw
+                 | Whitespace .
+
+FilterSepKw  -> comma_class .
+PipeSepKw    -> pipe_class .
+ThisKw       -> dot_class .
+OpenArrayKw  -> left_bracket_class .
+CloseArrayKw -> right_bracket_class .
+RangeSepKw   -> colon_class .
+
+ContainsKw -> contains_class .
+RegexpKw   -> regexp_class .
+SelectKw   -> select_class .
+LengthKw   -> length_class .
+SubStrKw   -> substring_class .
+AtofKw     -> atof_class .
+
+OpenFuncKw      -> left_parens_class .
+CloseFuncKw     -> right_parens_class .
+OpenPriorityKw  -> left_parens_class .
+ClosePriorityKw -> right_parens_class .
+ArgSepKw        -> comma_class .
+OrKw            -> or_class .
+AndKw           -> and_class .
+NotKw           -> not_class .
+XORKw           -> xor_class .
+InvKw           -> inv_class .
+AddKw           -> add_class .
+SubtractKw      -> substract_class .
+MultiplyKw      -> multiply_class .
+DivideKw        -> divide_class .
+OpenStrKw       -> quote_class .
+CloseStrKw      -> quote_class .
+DecimalKw       -> dot_class .
+
+
 
 /* Lexical */
 
 Lexicon -> Whitespace
          | FieldIdentifier
-         | Keywords
-         | Integer.
+         | Kws
+         | Int.
 
 /* special */
 
@@ -69,50 +296,73 @@ Whitespace -> whitespace_class Whitespace
 
 /* literals */
 
-FieldIdentifier -> InlineString .
+FieldIdentifier -> InlineStr .
 
-/* keywords */
+/* Kws */
 
-Keywords -> FilterSeparatorKeyword
-          | PipeSeparatorKeyword
-          | ThisKeyword
-          | OpenArrayKeyword
-          | CloseArrayKeyword
-          | RangeSeparatorKeyword .
+Kws -> FilterSepKw
+     | PipeSepKw
+     | ThisKw
+     | OpenArrayKw
+     | CloseArrayKw
+     | RangeSepKw
+     | OpenFuncKw
+     | CloseFuncKw
+     | ArgSepKw
+     | OpenStrKw
+     | CloseStrKw .
 
-FilterSeparatorKeyword -> comma_class .
-PipeSeparatorKeyword -> pipe_class .
-ThisKeyword -> dot_class .
-OpenArrayKeyword -> left_bracket_class .
-CloseArrayKeyword -> right_bracket_class .
-RangeSeparatorKeyword -> colon_class .
 
-InlineString -> InlineLetter SubInlineString .
-SubInlineString -> InlineLetter SubInlineString
-                 | Digit SubInlineString
-                 | epsilon .
+InlineStr    -> InlineLetter SubInlineStr .
+SubInlineStr -> InlineLetter SubInlineStr
+              | Digit SubInlineStr
+              | epsilon .
 InlineLetter -> Letter
-              | escape_letter_class EscapedKeyword .
-EscapedKeyword -> Keywords
-                | Whitespace .
+              | escape_letter_class EscapedKw .
+EscapedKw    -> Kws
+              | Whitespace .
 Letter -> letter_class .
 Digit -> digit_class .
-Integer -> zero_digit_class
-         | non_zero_digit_class Integer .
+Int -> zero_digit_class
+     | non_zero_digit_class Int .
 
 /* terminals -> regexp */
 
 epsilon -> "" .
-whitespace_class -> " " .
+whitespace_class -> " " | "\n" | "\t" | "\r" .
 pipe_class -> "|" .
 comma_class -> "," .
 dot_class -> "." .
 left_bracket_class -> "[" .
 right_bracket_class -> "]" .
+left_parens_class -> "(" .
+right_parens_class -> ")" .
 colon_class -> ":" .
+quote_class -> `"` .
 
 escape_letter_class -> "\" .
 letter_class -> [a-Z].
 digit_class -> zero_digit_class | non_zero_digit_class.
 zero_digit_class -> "0".
 non_zero_digit_class -> [1-9].
+bool_class -> true_class | false_class .
+true_class -> "true" .
+false_class -> "false" .
+sci_notation_class -> "e" .
+
+contains_class -> "contains" .
+regexp_class -> "regexp" .
+select_class -> "select" .
+length_class -> "length" .
+substring_class -> "substring" .
+atof_class -> "atof" .
+
+or_class -> "or" .
+and_class -> "and" .
+not_class -> "not" .
+xor_class -> "xor" .
+
+add_class -> "+" .
+substract_class -> "-" .
+multiply_class -> "*" .
+divide_class -> "/" .

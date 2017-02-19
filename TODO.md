@@ -1,28 +1,30 @@
 # Things to do
 
-- [ ] Support booleans.
-- [ ] Support real numbers.
-    - [ ] Support parsing more than just integer.
-- [ ] Support filter queries.
-    - [ ] boolean algebra, ideas are:
-        - [ ] `or` keyword
-        - [ ] `and` keyword
-        - [ ] `xor` keyword
-        - [ ] `not` keyword
-    - [ ] numerical comparisons, ideas are:
-        - [ ] `<` keyword
-        - [ ] `>` keyword
-        - [ ] `<=` keyword
-        - [ ] `>=` keyword
-        - [ ] `==` keyword
-    - [ ] numerical operations, ideas are:
-        - [ ] `+`, `-`, `*`, `/`, `^`, and so on.
-    - [ ] string operations, ideas are:
-        - [ ] `contains`
-        - [ ] `regexp`
-        - [ ] `length`
+- [x] Support booleans.
+- [x] Support real numbers.
+    - [x] Support parsing more than just integer.
+- [~] Support filter queries.
+    - [x] selection queries:
+        - [x] `select` to whitelist objects
+    - [x] boolean algebra, ideas are:
+        - [x] `or` keyword
+        - [x] `and` keyword
+        - [x] `xor` keyword
+        - [x] `not` keyword
+    - [x] numerical comparisons, ideas are:
+        - [x] `<` keyword
+        - [x] `>` keyword
+        - [x] `<=` keyword
+        - [x] `>=` keyword
+        - [x] `==` keyword
+    - [x] numerical algebra, ideas are:
+        - [x] `+`, `-`, `*`, `/`, `^`, and so on.
+    - [x] string operations, ideas are:
+        - [x] `contains`
+        - [x] `regexp`
+        - [x] `length`
         - [ ] `fuzzy` to fuzzy match
-        - [ ] `substr` to do substrings
+        - [ ] `substr` to emit substrings
 - [ ] Support mutation of messages, ideas are:
     - [ ] `=` keyword that _sets_ or _updates_ the value of a field
     - [ ] `delete` keyword that _deletes_ a field
