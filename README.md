@@ -7,74 +7,42 @@
 ## Description
 
 _Messages_ in `streamql` can have the following types:
-- **string**: is an ordered list of letters (currently the grammar only supports letters in `[a-Z]` 😅 )
-- **number**: is a real value (currently the grammar has a bug and only supports the integer part of numbers 😅 )
+- **string**: is an ordered list of letters
+- **number**: is a real value
+- **boolean**: is a true or false value
 - **array**: is an ordered list of _messages_.
 - **object**: is an unordered map of **string** to _message_.
 
-The query language can then be used to select parts of individual message and (to be done 😅) filter messages
+The query language can then be used to select parts of individual message and filter messages
 based on their content.
 
 Basically it works quite a bit like [`./jq`](https://stedolan.github.io/jq/) but implements only part of a similar language and an engine to process arbitrary structured messages (not just JSON). The idea is that you can make `jq`-like tools for arbitrary structured message formats that support the types in the shape of a _message_.
 
-## Usage
+## Status
 
-```go
-import (
-	"github.com/aybabtme/streamql/lang/parser"
-	"github.com/aybabtme/streamql/lang/vm"
-	"github.com/aybabtme/streamql/lang/vm/msg"
-)
-
-// with streams of input and output messages
-inc := make(chan msg.Message)
-outc := make(chan msg.Message)
-
-// parse a query
-ast, err := parser.NewParser(query).Parse()
-if err != nil {
-    log.Fatalf("invalid query: %v", err)
-}
-
-// execute the filters (a query can contain many filters)
-filter := tree.Filters[0]
-engine := vm.ASTInterpreter(filter)
-engine.Filter(
-    func() (msg.Message, bool) { msg, more := <-inc; return msg, more },
-    func(m msg.Message) bool { outc <- m; return true },
-)
-```
+The API is very much a work in progress. The `msg.Sink`, `msg.Source` and `msg.Builder` are a bit cumbersome and I need to think more about how to make this cleaner.
 
 ## Goals
 
-* performance: the language must be fast to parse, the grammar be unambiguous, and execution of queries on streams must be rapid.
+* performance: execution of queries on streams must be rapid... _right now, the AST and the VMs are pretty innefficient :)_
 * memory: the VM must use a bounded amount of memory to process any stream of message.
 * simple language: features in the language must remain minimalistic and be orthogonal to one another.
 * generic semantic: the language should be appliable on any dataformat that respects the __message__ semantics.
 
 ## Example queries
 
+For now the language is better described by it's [tests](https://github.com/aybabtme/streamql/blob/master/lang/vm/vmtest/basic.go#L25-L961), but here's a couple of valid queries:
+
 ```streamql
-.string
-.string.string
+.hello
+.hello["an awkward key"] + "world"
 .[]
-.string[]
 .[42]
-.[].string
-.string[42]
-.[42].string
-.[42:42]
-.[][]
-.string[42:42]
-.[][42]
-.[42:42].string
-.[42][]
-.[42][42]
-.[42:42][]
-.[][42:42]
-.[42:42][42]
-.[42][42:42]
-.[42:42][42:42]
+.[:42]
+.[42:]
+.hello.world | select(. > 4.0)
+select(.keep) | .name
+.lol[0:1] | select(.is_red && string(.size) == "large") | select(.)
 ```
 
 ## Stability
