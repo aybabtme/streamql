@@ -12,6 +12,7 @@ import (
 	"github.com/aybabtme/streamql/lang/vm"
 )
 
+// Verify that a VM emits the expected messages, given input messages and a query.
 func Verify(t *testing.T, mkVM func(*ast.AST, *vm.Options) vm.VM) {
 	bd := gomsg.Build()
 

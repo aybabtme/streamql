@@ -36,7 +36,7 @@
 /./ { return lval.setError(yylex) }
 
 //
-package spec
+package grammar
 
 import (
     "fmt"

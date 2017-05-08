@@ -13,8 +13,10 @@ func oneOfExpr(v interface{}) *ast.Expr {
 		return &ast.Expr{Literal: t}
 	case *ast.Selector:
 		return &ast.Expr{Selector: t}
-	case *ast.Operator:
-		return &ast.Expr{Operator: t}
+	case *ast.UnaryOperator:
+		return &ast.Expr{UnaryOperator: t}
+	case *ast.BinaryOperator:
+		return &ast.Expr{BinaryOperator: t}
 	case *ast.FuncCall:
 		return &ast.Expr{FuncCall: t}
 	case *ast.Expr:
@@ -47,34 +49,42 @@ func oneOfSelector(v interface{}, child *ast.Selector) *ast.Selector {
 	}
 }
 
-func oneOfOperator(v interface{}) *ast.Operator {
+func oneOfUnaryOperator(v interface{}) *ast.UnaryOperator {
 	switch t := v.(type) {
-	case *ast.OperandLogNot:
-		return &ast.Operator{LogNot: t}
-	case *ast.OperandLogAnd:
-		return &ast.Operator{LogAnd: t}
-	case *ast.OperandLogOr:
-		return &ast.Operator{LogOr: t}
-	case *ast.OperandNumAdd:
-		return &ast.Operator{NumAdd: t}
-	case *ast.OperandNumSub:
-		return &ast.Operator{NumSub: t}
-	case *ast.OperandNumDiv:
-		return &ast.Operator{NumDiv: t}
-	case *ast.OperandNumMul:
-		return &ast.Operator{NumMul: t}
-	case *ast.OperandCmpEq:
-		return &ast.Operator{CmpEq: t}
-	case *ast.OperandCmpNotEq:
-		return &ast.Operator{CmpNotEq: t}
-	case *ast.OperandCmpGt:
-		return &ast.Operator{CmpGt: t}
-	case *ast.OperandCmpGtOrEq:
-		return &ast.Operator{CmpGtOrEq: t}
-	case *ast.OperandCmpLs:
-		return &ast.Operator{CmpLs: t}
-	case *ast.OperandCmpLsOrEq:
-		return &ast.Operator{CmpLsOrEq: t}
+	case *ast.OpLogNot:
+		return &ast.UnaryOperator{LogNot: t}
+	default:
+		panic(fmt.Sprintf("invalid expression for operator: %T", t))
+		return nil
+	}
+}
+
+func oneOfBinaryOperator(v interface{}) *ast.BinaryOperator {
+	switch t := v.(type) {
+	case *ast.OpLogAnd:
+		return &ast.BinaryOperator{LogAnd: t}
+	case *ast.OpLogOr:
+		return &ast.BinaryOperator{LogOr: t}
+	case *ast.OpNumAdd:
+		return &ast.BinaryOperator{NumAdd: t}
+	case *ast.OpNumSub:
+		return &ast.BinaryOperator{NumSub: t}
+	case *ast.OpNumDiv:
+		return &ast.BinaryOperator{NumDiv: t}
+	case *ast.OpNumMul:
+		return &ast.BinaryOperator{NumMul: t}
+	case *ast.OpCmpEq:
+		return &ast.BinaryOperator{CmpEq: t}
+	case *ast.OpCmpNotEq:
+		return &ast.BinaryOperator{CmpNotEq: t}
+	case *ast.OpCmpGt:
+		return &ast.BinaryOperator{CmpGt: t}
+	case *ast.OpCmpGtOrEq:
+		return &ast.BinaryOperator{CmpGtOrEq: t}
+	case *ast.OpCmpLs:
+		return &ast.BinaryOperator{CmpLs: t}
+	case *ast.OpCmpLsOrEq:
+		return &ast.BinaryOperator{CmpLsOrEq: t}
 	default:
 		panic(fmt.Sprintf("invalid expression for operator: %T", t))
 		return nil
@@ -106,8 +116,12 @@ func selector(sym yySymType) yySymType {
 	return yySymType{node: oneOfSelector(sym.node, nil)}
 }
 
-func operator(sym yySymType) yySymType {
-	return yySymType{node: oneOfOperator(sym.node)}
+func unaryOperator(sym yySymType) yySymType {
+	return yySymType{node: sym.node}
+}
+
+func binaryOperator(sym yySymType) yySymType {
+	return yySymType{node: sym.node}
 }
 
 func funcCall(sym yySymType) yySymType {
@@ -232,48 +246,48 @@ func emitSliceSelector(fromSym, toSym yySymType, subSelSym yySymType) yySymType 
 }
 
 func emitOpNot(arg yySymType) yySymType {
-	return yySymType{node: &ast.OperandLogNot{Arg: expr(arg)}}
+	return yySymType{node: &ast.UnaryOperator{Arg: expr(arg), LogNot: &ast.OpLogNot{}}}
 }
 func emitOpAnd(lhs, rhs yySymType) yySymType {
-	return yySymType{node: &ast.OperandLogAnd{LHS: expr(lhs), RHS: expr(rhs)}}
+	return yySymType{node: &ast.BinaryOperator{LHS: expr(lhs), RHS: expr(rhs), LogAnd: &ast.OpLogAnd{}}}
 }
 func emitOpOr(lhs, rhs yySymType) yySymType {
-	return yySymType{node: &ast.OperandLogOr{LHS: expr(lhs), RHS: expr(rhs)}}
+	return yySymType{node: &ast.BinaryOperator{LHS: expr(lhs), RHS: expr(rhs), LogOr: &ast.OpLogOr{}}}
 }
 func emitOpNeg(arg yySymType) yySymType {
 	z := int64(0)
 	zero := &ast.Expr{Literal: &ast.Literal{Int: &z}}
-	return yySymType{node: &ast.OperandNumSub{LHS: zero, RHS: expr(arg)}}
+	return yySymType{node: &ast.BinaryOperator{LHS: zero, RHS: expr(arg), NumSub: &ast.OpNumSub{}}}
 }
 func emitOpAdd(lhs, rhs yySymType) yySymType {
-	return yySymType{node: &ast.OperandNumAdd{LHS: expr(lhs), RHS: expr(rhs)}}
+	return yySymType{node: &ast.BinaryOperator{LHS: expr(lhs), RHS: expr(rhs), NumAdd: &ast.OpNumAdd{}}}
 }
 func emitOpSub(lhs, rhs yySymType) yySymType {
-	return yySymType{node: &ast.OperandNumSub{LHS: expr(lhs), RHS: expr(rhs)}}
+	return yySymType{node: &ast.BinaryOperator{LHS: expr(lhs), RHS: expr(rhs), NumSub: &ast.OpNumSub{}}}
 }
 func emitOpDiv(lhs, rhs yySymType) yySymType {
-	return yySymType{node: &ast.OperandNumDiv{LHS: expr(lhs), RHS: expr(rhs)}}
+	return yySymType{node: &ast.BinaryOperator{LHS: expr(lhs), RHS: expr(rhs), NumDiv: &ast.OpNumDiv{}}}
 }
 func emitOpMul(lhs, rhs yySymType) yySymType {
-	return yySymType{node: &ast.OperandNumMul{LHS: expr(lhs), RHS: expr(rhs)}}
+	return yySymType{node: &ast.BinaryOperator{LHS: expr(lhs), RHS: expr(rhs), NumMul: &ast.OpNumMul{}}}
 }
 func emitOpEq(lhs, rhs yySymType) yySymType {
-	return yySymType{node: &ast.OperandCmpEq{LHS: expr(lhs), RHS: expr(rhs)}}
+	return yySymType{node: &ast.BinaryOperator{LHS: expr(lhs), RHS: expr(rhs), CmpEq: &ast.OpCmpEq{}}}
 }
 func emitOpNotEq(lhs, rhs yySymType) yySymType {
-	return yySymType{node: &ast.OperandCmpNotEq{LHS: expr(lhs), RHS: expr(rhs)}}
+	return yySymType{node: &ast.BinaryOperator{LHS: expr(lhs), RHS: expr(rhs), CmpNotEq: &ast.OpCmpNotEq{}}}
 }
 func emitOpGt(lhs, rhs yySymType) yySymType {
-	return yySymType{node: &ast.OperandCmpGt{LHS: expr(lhs), RHS: expr(rhs)}}
+	return yySymType{node: &ast.BinaryOperator{LHS: expr(lhs), RHS: expr(rhs), CmpGt: &ast.OpCmpGt{}}}
 }
 func emitOpGtOrEq(lhs, rhs yySymType) yySymType {
-	return yySymType{node: &ast.OperandCmpGtOrEq{LHS: expr(lhs), RHS: expr(rhs)}}
+	return yySymType{node: &ast.BinaryOperator{LHS: expr(lhs), RHS: expr(rhs), CmpGtOrEq: &ast.OpCmpGtOrEq{}}}
 }
 func emitOpLs(lhs, rhs yySymType) yySymType {
-	return yySymType{node: &ast.OperandCmpLs{LHS: expr(lhs), RHS: expr(rhs)}}
+	return yySymType{node: &ast.BinaryOperator{LHS: expr(lhs), RHS: expr(rhs), CmpLs: &ast.OpCmpLs{}}}
 }
 func emitOpLsOrEq(lhs, rhs yySymType) yySymType {
-	return yySymType{node: &ast.OperandCmpLsOrEq{LHS: expr(lhs), RHS: expr(rhs)}}
+	return yySymType{node: &ast.BinaryOperator{LHS: expr(lhs), RHS: expr(rhs), CmpLsOrEq: &ast.OpCmpLsOrEq{}}}
 }
 
 func emitFuncCall(arg0, arg1 yySymType) yySymType {
