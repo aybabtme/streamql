@@ -1,5 +1,5 @@
 %{
-package spec
+package grammar
 
 import (
     "io"
@@ -64,11 +64,12 @@ var implicitSliceIdx = struct{}{}
 program: expr { cast(yylex).Expr = expr($1) }
        | ;
 
-expr: literal        { $$ = literal($1) }
-    | selector       { $$ = selector($1) }
-    | operator       { $$ = operator($1) }
-    | func_call      { $$ = funcCall($1) }
-    | expr Pipe expr { $$ = pipe($1, $3) }
+expr: literal         { $$ = literal($1) }
+    | selector        { $$ = selector($1) }
+    | unary_operator  { $$ = unaryOperator($1) }
+    | binary_operator { $$ = binaryOperator($1) }
+    | func_call       { $$ = funcCall($1) }
+    | expr Pipe expr  { $$ = pipe($1, $3) }
     ;
 
 literal: Bool   { $$ = emitBool($1) }
@@ -94,22 +95,25 @@ sub_selector: Dot Identifier sub_selector                           { $$ = emitM
             | LeftBracket expr Colon RightBracket sub_selector      { $$ = emitSliceSelector($2, yySymType{node: implicitSliceIdx}, $5)}
             | { $$ = yySymType{} };
 
-operator:      LogNot    expr               { $$ = emitOpNot($2)        }
-        | expr LogAnd    expr               { $$ = emitOpAnd($1, $3)    }
-        | expr LogOr     expr               { $$ = emitOpOr($1, $3)     }
-        |      NumSub    expr               { $$ = emitOpNeg($2)        }
-        | expr NumAdd    expr               { $$ = emitOpAdd($1, $3)    }
-        | expr NumSub    expr               { $$ = emitOpSub($1, $3)    }
-        | expr NumDiv    expr               { $$ = emitOpDiv($1, $3)    }
-        | expr NumMul    expr               { $$ = emitOpMul($1, $3)    }
-        | expr CmpEq     expr               { $$ = emitOpEq($1, $3)     }
-        | expr CmpNotEq  expr               { $$ = emitOpNotEq($1, $3)  }
-        | expr CmpGt     expr               { $$ = emitOpGt($1, $3)     }
-        | expr CmpGtOrEq expr               { $$ = emitOpGtOrEq($1, $3) }
-        | expr CmpLs     expr               { $$ = emitOpLs($1, $3)     }
-        | expr CmpLsOrEq expr               { $$ = emitOpLsOrEq($1, $3) }
-        | LeftParens operator RightParens   { $$ = $2 }
-        ;
+unary_operator: LogNot expr                           { $$ = emitOpNot($2) }
+              | LeftParens unary_operator RightParens { $$ = $2 }
+              ;
+
+binary_operator: expr LogAnd    expr                    { $$ = emitOpAnd($1, $3)    }
+               | expr LogOr     expr                    { $$ = emitOpOr($1, $3)     }
+               |      NumSub    expr                    { $$ = emitOpNeg($2)        }
+               | expr NumAdd    expr                    { $$ = emitOpAdd($1, $3)    }
+               | expr NumSub    expr                    { $$ = emitOpSub($1, $3)    }
+               | expr NumDiv    expr                    { $$ = emitOpDiv($1, $3)    }
+               | expr NumMul    expr                    { $$ = emitOpMul($1, $3)    }
+               | expr CmpEq     expr                    { $$ = emitOpEq($1, $3)     }
+               | expr CmpNotEq  expr                    { $$ = emitOpNotEq($1, $3)  }
+               | expr CmpGt     expr                    { $$ = emitOpGt($1, $3)     }
+               | expr CmpGtOrEq expr                    { $$ = emitOpGtOrEq($1, $3) }
+               | expr CmpLs     expr                    { $$ = emitOpLs($1, $3)     }
+               | expr CmpLsOrEq expr                    { $$ = emitOpLsOrEq($1, $3) }
+               | LeftParens binary_operator RightParens { $$ = $2 }
+               ;
 
 func_call: Identifier LeftParens args RightParens { $$ = emitFuncCall($1, $3) }
          | Identifier                             { $$ = emitImplicitFuncCall($1) }
