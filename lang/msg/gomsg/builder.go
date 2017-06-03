@@ -12,10 +12,7 @@ var (
 	_ msg.ArrayBuilder  = (*arrBuilder)(nil)
 )
 
-type baseBuilder struct {
-	obj *objBuilder
-	arr *arrBuilder
-}
+type baseBuilder struct{}
 
 func (sb *baseBuilder) String(v string) (msg.Msg, error) { return concreteStr(v), nil }
 func (sb *baseBuilder) Int(v int64) (msg.Msg, error)     { return concreteInt(v), nil }
